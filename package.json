@@ -1,0 +1,11 @@
+{
+  "name": "alpage",
+  "version": "0.1.0",
+  "description": "Jeu de logique type Queens : une marmotte par alpage. PWA 100 % locale, sans pub, sans pistage.",
+  "private": true,
+  "type": "module",
+  "license": "GPL-3.0-or-later",
+  "scripts": {
+    "test": "node --test"
+  }
+}

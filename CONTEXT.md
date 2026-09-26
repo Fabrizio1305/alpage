@@ -23,29 +23,32 @@ Un puzzle n'a qu'une seule solution : tout se déduit, rien ne se devine.
   (`localStorage`).
 
 ## Décisions
-- **Prises** : PWA en HTML/CSS/JS vanilla, sans framework ni build ; moteur de jeu pur testé
-  avec `node --test` (Node 22 sur le PC maison) ; puzzle du jour = générateur déterministe à
-  partir de la date (même puzzle partout, sans serveur).
-- **À valider par Fabrizio** :
-  1. Thème marmottes / alpages (universel, clin d'œil suisse).
-  2. Mode de livraison sur le Pixel : **GitHub Pages** (dépôt public, installation en un clic
-     depuis Chrome, mises à jour automatiques) ou **APK Capacitor** (dépôt privé possible,
-     zéro réseau absolu, mise à jour manuelle). Recommandation : GitHub Pages, APK en option
-     plus tard depuis le même code.
+- **Prises (validées par Fabrizio le 2026-09-26)** : thème marmottes / alpages ; livraison par
+  **GitHub Pages** depuis le dépôt public `Fabrizio1305/alpage` ; licence **GPL-3.0-or-later**
+  (toute version dérivée doit rester ouverte ; changeable tant que Fabrizio est seul auteur).
+- **Techniques** : PWA en HTML/CSS/JS vanilla, sans framework ni build ; moteur pur dans
+  `src/engine/`, testé avec `node --test` (Node 22) ; puzzle du jour = générateur déterministe
+  à partir de la date locale, taille selon le jour (lun 6, mar-mer 7, jeu-ven 8, sam-dim 9,
+  réglable dans `src/engine/daily.js`).
+- **Générateur** : placement aléatoire valide → alpages qui poussent avec des appétits
+  différents → réparation de l'unicité en déplaçant une case de chaque solution parasite vers
+  un alpage voisin (connexité préservée). Mesuré sur le PC : 10×10 en 20 ms en moyenne,
+  188 ms au pire sur 30 graines.
 
 ## Lots
 | # | Lot | Contenu | Statut |
 |---|-----|---------|--------|
-| 0 | Cadre | Dépôt local, fichier d'état, décisions. Remote GitHub selon décision de livraison. | En cours |
-| 1 | Moteur | Représentation grille/régions, validation des règles, solveur avec contrôle d'unicité, générateur (solution aléatoire → régions par croissance → rejet si non unique), graine quotidienne, tests. | À faire |
+| 0 | Cadre | Dépôt, fichier d'état, licence GPL-3.0, README, remote GitHub public. | Fait |
+| 1 | Moteur | Règles, solveur avec unicité, générateur, graine quotidienne, 16 tests. | Fait |
 | 2 | Interface | Plateau tactile plein écran, tap = croix « pas ici », double-tap = marmotte, sifflets, détection de victoire, chrono, vibration. | À faire |
 | 3 | Modes & progression | Puzzle du jour, partie libre par taille (5×5 à 10×10), reprise de la partie en cours, statistiques locales (série quotidienne, meilleurs temps). | À faire |
-| 4 | PWA | `manifest.json`, service worker hors ligne (cache-first), icônes, CSP stricte, hébergement. | À faire |
+| 4 | PWA | `manifest.json`, service worker hors ligne (cache-first), icônes, CSP stricte, activation de GitHub Pages. | À faire |
 | 5 | Finitions | Thème visuel montagne, mode sombre, motifs pour daltonisme, tutoriel 3 écrans, mode zen sans sifflets (option). | À faire |
 | 6 | Vérification Pixel | Installation, test en mode avion, preuve de zéro requête réseau, APK optionnel. | À faire |
 
 ## Prochaine action recommandée
-Fabrizio valide le thème et le mode de livraison → Claude démarre le lot 1 (moteur + tests).
+Claude démarre le lot 2 (interface de jeu) : rien n'attend Fabrizio.
 
 ## Journal
-- 2026-09-26 : cadrage, règles transcrites, plan par lots. Dépôt git local, pas encore de remote.
+- 2026-09-26 : cadrage, règles transcrites, plan par lots. Thème, GitHub Pages et GPL-3.0 validés.
+  Lot 1 livré : moteur + 16 tests verts. Dépôt public `Fabrizio1305/alpage` créé et poussé.
