@@ -30,3 +30,11 @@ export function dailySize(key) {
 export function dailyPuzzle(key = dateKey()) {
   return generatePuzzle(dailySize(key), dailySeed(key));
 }
+
+/**
+ * Puzzle correspondant à une demande de l'interface :
+ * { type: 'jour', cle } ou { type: 'libre', size, seed }.
+ */
+export function puzzleFor({ type, cle, size, seed }) {
+  return type === 'jour' ? dailyPuzzle(cle) : generatePuzzle(size, seed);
+}

@@ -1,16 +1,14 @@
-// Interface de jeu : plateau, interactions, sifflets, chrono, réglages, tutoriel, sauvegarde.
+// Interface de jeu : dessine l'état d'une partie (src/engine/game.js) et relaie les gestes.
 // Aucune donnée ne sort du téléphone : tout tourne dans cette page.
 
 import {
-  EMPTY, CROSS, MARMOT, MIN_SIZE, MAX_SIZE,
-  generatePuzzle, dailyPuzzle, dateKey, isSolved, findConflicts, cellsCoveredBy,
+  EMPTY, CROSS, MARMOT, MIN_SIZE, MAX_SIZE, dateKey, puzzleFor,
+  SIFFLETS_MAX, createGame, restoreGame, saveableGame, tap, updateAutoCrosses, conflicts,
 } from '../engine/index.js';
 import {
   chargerPartie, sauvegarderPartie, chargerStats, enregistrerVictoire, serieCourante,
   chargerReglages, sauvegarderReglages,
 } from './storage.js';
-
-const SIFFLETS_MAX = 3;
 
 const $ = (id) => document.getElementById(id);
 const plateau = $('plateau');
@@ -19,24 +17,84 @@ const chrono = $('chrono');
 const voile = $('voile');
 const taille = $('taille');
 const stats = $('stats');
+const attente = $('attente');
 
 let reglages = chargerReglages();
-
-const jeu = {
-  puzzle: null,
-  mode: 'jour',      // 'jour' ou 'libre'
-  cleJour: null,     // date du puzzle du jour, null en partie libre
-  zen: false,        // sans sifflets, conflits surlignés
-  cells: [],         // EMPTY / CROSS / MARMOT
-  manuel: [],        // true si la croix a été posée par le joueur
-  auto: [],          // nombre de marmottes qui interdisent la case
-  rendu: [],         // dernier état dessiné par case (évite de redessiner pour rien)
-  sifflets: SIFFLETS_MAX,
-  fini: false,
-  demarre: null,     // horodatage du premier geste
-  ecoule: 0,         // ms cumulés avant la dernière pause
+let partie = null; // état de la partie en cours (voir src/engine/game.js)
+const ui = {
+  demarre: null,   // horodatage du dernier démarrage du chrono
   minuteur: null,
+  rendu: [],       // dernier état dessiné par case (évite de redessiner pour rien)
+  demande: 0,      // numéro de la dernière demande de puzzle
 };
+
+// ---------- Génération des puzzles, hors du fil principal ----------
+
+let worker = null;
+const attentes = new Map();
+let prochainId = 0;
+
+function calculerIci(demande) {
+  return new Promise((resolve, reject) => {
+    // Petit délai : laisse l'écran afficher « préparation » avant le calcul.
+    setTimeout(() => {
+      try { resolve(puzzleFor(demande)); } catch (e) { reject(e); }
+    }, 30);
+  });
+}
+
+function demarrerWorker() {
+  try {
+    worker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' });
+  } catch {
+    worker = null;
+    return;
+  }
+  worker.onmessage = ({ data }) => {
+    const a = attentes.get(data.id);
+    if (!a) return;
+    attentes.delete(data.id);
+    if (data.erreur) a.reject(new Error(data.erreur));
+    else a.resolve(data.puzzle);
+  };
+  // Worker indisponible : on calcule ici, sans rien perdre des demandes en cours.
+  worker.onerror = (e) => {
+    e.preventDefault();
+    worker.terminate();
+    worker = null;
+    for (const [id, a] of attentes) {
+      attentes.delete(id);
+      calculerIci(a.demande).then(a.resolve, a.reject);
+    }
+  };
+}
+
+function calculer(demande) {
+  if (!worker) return calculerIci(demande);
+  return new Promise((resolve, reject) => {
+    const id = ++prochainId;
+    attentes.set(id, { resolve, reject, demande });
+    worker.postMessage({ id, ...demande });
+  });
+}
+
+async function lancer(demande) {
+  const n = ++ui.demande;
+  plateau.classList.add('occupe');
+  const minuterie = setTimeout(() => { if (n === ui.demande) attente.hidden = false; }, 150);
+  try {
+    const puzzle = await calculer(demande);
+    if (n === ui.demande) nouvellePartie(puzzle, demande.type, demande.cle ?? null);
+  } catch {
+    if (n === ui.demande) afficherVoile('Oups', 'Impossible de préparer ce puzzle. Réessayez.', false);
+  } finally {
+    clearTimeout(minuterie);
+    if (n === ui.demande) {
+      attente.hidden = true;
+      plateau.classList.remove('occupe');
+    }
+  }
+}
 
 // ---------- Parties ----------
 
@@ -44,14 +102,12 @@ function graineAleatoire() {
   return crypto.getRandomValues(new Uint32Array(1))[0];
 }
 
-function installer(partie) {
+function installer(p) {
   arreterChrono();
-  Object.assign(jeu, partie, { fini: false, demarre: null, minuteur: null });
-  const n = jeu.puzzle.size ** 2;
-  if (jeu.manuel.length !== n) jeu.manuel = new Array(n).fill(false);
+  partie = p;
+  updateAutoCrosses(partie, reglages.autoCroix);
   voile.hidden = true;
   construirePlateau();
-  recalculerAuto();
   rendreTout();
   rendreSifflets();
   rendreChrono();
@@ -59,55 +115,43 @@ function installer(partie) {
 }
 
 function nouvellePartie(puzzle, mode, cleJour = null) {
-  const n = puzzle.size ** 2;
-  installer({
-    puzzle, mode, cleJour, zen: reglages.zen,
-    cells: new Array(n).fill(EMPTY), manuel: new Array(n).fill(false),
-    sifflets: SIFFLETS_MAX, ecoule: 0,
-  });
+  installer(createGame(puzzle, { mode, cleJour, zen: reglages.zen }));
   sauvegarder();
 }
 
 function partieDuJour() {
-  const cle = dateKey();
-  nouvellePartie(dailyPuzzle(cle), 'jour', cle);
+  lancer({ type: 'jour', cle: dateKey() });
 }
 
 function partieLibre() {
-  nouvellePartie(generatePuzzle(Number(taille.value), graineAleatoire()), 'libre');
+  lancer({ type: 'libre', size: Number(taille.value), seed: graineAleatoire() });
 }
 
 function rejouer() {
-  nouvellePartie(jeu.puzzle, jeu.mode, jeu.cleJour);
+  nouvellePartie(partie.puzzle, partie.mode, partie.cleJour);
 }
 
 /** Reprend une partie sauvegardée non terminée. Renvoie false si rien à reprendre. */
 function reprendre() {
-  const s = chargerPartie();
-  if (!s || s.fini || !s.puzzle || !Array.isArray(s.cells)) return false;
-  if (s.mode === 'jour' && s.cleJour !== dateKey()) return false; // le puzzle du jour a changé
-  installer({
-    puzzle: s.puzzle, mode: s.mode, cleJour: s.cleJour ?? null, zen: !!s.zen,
-    cells: s.cells, manuel: s.manuel ?? [], sifflets: s.sifflets, ecoule: s.ecoule ?? 0,
-  });
+  const p = restoreGame(chargerPartie(), { autoCroix: reglages.autoCroix });
+  if (!p || p.fini) return false;
+  if (p.mode === 'jour' && p.cleJour !== dateKey()) return false; // le puzzle du jour a changé
+  installer(p);
   return true;
 }
 
 function sauvegarder() {
-  sauvegarderPartie({
-    puzzle: jeu.puzzle, mode: jeu.mode, cleJour: jeu.cleJour, zen: jeu.zen, cells: jeu.cells,
-    manuel: jeu.manuel, sifflets: jeu.sifflets, fini: jeu.fini, ecoule: tempsEcoule(),
-  });
+  if (partie) sauvegarderPartie({ ...saveableGame(partie), ecoule: tempsEcoule() });
 }
 
 // ---------- Plateau ----------
 
 function construirePlateau() {
-  const { size, regions } = jeu.puzzle;
+  const { size, regions } = partie.puzzle;
   plateau.style.setProperty('--n', size);
-  plateau.classList.remove('fini');
+  plateau.classList.toggle('fini', partie.fini);
   plateau.replaceChildren();
-  jeu.rendu = new Array(size * size).fill('');
+  ui.rendu = new Array(size * size).fill('');
   for (let i = 0; i < size * size; i++) {
     const row = Math.floor(i / size), col = i % size;
     const b = document.createElement('button');
@@ -122,16 +166,16 @@ function construirePlateau() {
 }
 
 function rendreCase(i) {
-  const etat = jeu.cells[i];
-  const cle = `${etat}${etat === CROSS && !jeu.manuel[i] ? 'a' : ''}`;
-  if (jeu.rendu[i] === cle) return;
-  jeu.rendu[i] = cle;
+  const etat = partie.cells[i];
+  const cle = `${etat}${etat === CROSS && !partie.manuel[i] ? 'a' : ''}`;
+  if (ui.rendu[i] === cle) return;
+  ui.rendu[i] = cle;
   const b = plateau.children[i];
-  const { size, regions } = jeu.puzzle;
+  const { size, regions } = partie.puzzle;
   b.replaceChildren();
   if (etat === CROSS) {
     const s = document.createElement('span');
-    s.className = jeu.manuel[i] ? 'croix' : 'croix auto';
+    s.className = partie.manuel[i] ? 'croix' : 'croix auto';
     s.textContent = '✕';
     b.appendChild(s);
   } else if (etat === MARMOT) {
@@ -143,79 +187,46 @@ function rendreCase(i) {
 }
 
 function rendreTout() {
-  for (let i = 0; i < jeu.cells.length; i++) rendreCase(i);
-  const conflits = new Set(jeu.zen ? findConflicts(jeu.puzzle, jeu.cells) : []);
-  for (let i = 0; i < jeu.cells.length; i++) plateau.children[i].classList.toggle('conflit', conflits.has(i));
+  for (let i = 0; i < partie.cells.length; i++) rendreCase(i);
+  const surlignees = new Set(conflicts(partie));
+  for (let i = 0; i < partie.cells.length; i++) plateau.children[i].classList.toggle('conflit', surlignees.has(i));
 }
 
-/** Croix automatiques : recalculées depuis zéro à partir des marmottes posées. */
-function recalculerAuto() {
-  const n = jeu.cells.length;
-  jeu.auto = new Array(n).fill(0);
-  if (reglages.autoCroix) {
-    for (let i = 0; i < n; i++) {
-      if (jeu.cells[i] !== MARMOT) continue;
-      for (const j of cellsCoveredBy(jeu.puzzle, i)) jeu.auto[j]++;
-    }
-  }
-  for (let j = 0; j < n; j++) {
-    if (jeu.cells[j] === MARMOT) continue;
-    if (jeu.auto[j] > 0 && jeu.cells[j] === EMPTY) jeu.cells[j] = CROSS;
-    else if (jeu.auto[j] === 0 && jeu.cells[j] === CROSS && !jeu.manuel[j]) jeu.cells[j] = EMPTY;
-  }
-}
+// ---------- Gestes ----------
 
-// ---------- Interactions ----------
-
-function toucher(i) {
-  if (jeu.fini) return;
-  demarrerChrono();
-  const b = plateau.children[i];
-  const etat = jeu.cells[i];
-  if (etat === EMPTY) {
-    jeu.cells[i] = CROSS;
-    jeu.manuel[i] = true;
-  } else if (etat === CROSS) {
-    const { size, solution } = jeu.puzzle;
-    const bonne = solution[Math.floor(i / size)] === i % size;
-    if (bonne || jeu.zen) {
-      jeu.cells[i] = MARMOT;
-      jeu.manuel[i] = false;
-      b.classList.add('pose');
-      navigator.vibrate?.(15);
-    } else {
-      perdreSifflet(b);
-      return;
-    }
-  } else {
-    jeu.cells[i] = EMPTY;
-    jeu.manuel[i] = false;
-  }
-  recalculerAuto();
-  rendreTout();
-  if (isSolved(jeu.puzzle, jeu.cells)) gagner();
-  else sauvegarder();
-}
-
-function perdreSifflet(b) {
-  jeu.sifflets--;
-  rendreSifflets();
+function secouer(b) {
   b.classList.remove('erreur');
   void b.offsetWidth; // relance l'animation
   b.classList.add('erreur');
-  navigator.vibrate?.([60, 40, 60]);
-  if (jeu.sifflets === 0) perdre();
+}
+
+function toucher(i) {
+  if (!partie || partie.fini) return;
+  demarrerChrono();
+  const b = plateau.children[i];
+  const resultat = tap(partie, i, { autoCroix: reglages.autoCroix });
+  if (resultat === 'ignore') return;
+  if (resultat === 'marmotte' || resultat === 'victoire') {
+    b.classList.add('pose');
+    navigator.vibrate?.(15);
+  } else if (resultat === 'erreur' || resultat === 'defaite') {
+    secouer(b);
+    navigator.vibrate?.([60, 40, 60]);
+    rendreSifflets();
+  }
+  rendreTout();
+  if (resultat === 'victoire') gagner();
+  else if (resultat === 'defaite') perdre();
   else sauvegarder();
 }
 
 function gagner() {
-  jeu.fini = true;
   arreterChrono();
   plateau.classList.add('fini');
   navigator.vibrate?.([30, 30, 30, 30, 80]);
-  const temps = tempsEcoule();
-  const avant = chargerStats().meilleurs[jeu.puzzle.size];
-  enregistrerVictoire({ size: jeu.puzzle.size, temps, cleJour: jeu.cleJour });
+  const temps = partie.ecoule;
+  const avant = chargerStats().meilleurs[partie.puzzle.size];
+  enregistrerVictoire({ size: partie.puzzle.size, temps, cleJour: partie.cleJour });
   rendreStats();
   sauvegarder();
   const record = !avant || temps < avant ? ' Nouveau record pour cette taille !' : '';
@@ -223,7 +234,6 @@ function gagner() {
 }
 
 function perdre() {
-  jeu.fini = true;
   arreterChrono();
   plateau.classList.add('fini');
   sauvegarder();
@@ -240,26 +250,27 @@ function afficherVoile(titre, texte, rejouable) {
 // ---------- Sifflets, chrono, statistiques ----------
 
 function rendreSifflets() {
-  sifflets.hidden = jeu.zen;
-  $('badge-zen').hidden = !jeu.zen;
+  sifflets.hidden = partie.zen;
+  $('badge-zen').hidden = !partie.zen;
   sifflets.replaceChildren();
   for (let k = 0; k < SIFFLETS_MAX; k++) {
-    sifflets.insertAdjacentHTML('beforeend', `<svg class="${k < jeu.sifflets ? '' : 'perdu'}"><use href="#sifflet"/></svg>`);
+    sifflets.insertAdjacentHTML('beforeend', `<svg class="${k < partie.sifflets ? '' : 'perdu'}"><use href="#sifflet"/></svg>`);
   }
-  sifflets.setAttribute('aria-label', `${jeu.sifflets} sifflet${jeu.sifflets > 1 ? 's' : ''} sur ${SIFFLETS_MAX}`);
+  sifflets.setAttribute('aria-label', `${partie.sifflets} sifflet${partie.sifflets > 1 ? 's' : ''} sur ${SIFFLETS_MAX}`);
 }
 
 function rendreStats() {
   const s = chargerStats();
   const serie = serieCourante(s, dateKey());
-  const meilleur = s.meilleurs[jeu.puzzle.size];
   const parts = [`Série : ${serie} jour${serie > 1 ? 's' : ''}`, `Réussis : ${s.reussis}`];
-  if (meilleur) parts.push(`Record ${jeu.puzzle.size}×${jeu.puzzle.size} : ${formaterTemps(meilleur)}`);
+  const meilleur = partie && s.meilleurs[partie.puzzle.size];
+  if (meilleur) parts.push(`Record ${partie.puzzle.size}×${partie.puzzle.size} : ${formaterTemps(meilleur)}`);
   stats.textContent = parts.join(' · ');
 }
 
 function tempsEcoule() {
-  return jeu.ecoule + (jeu.demarre ? Date.now() - jeu.demarre : 0);
+  if (!partie) return 0;
+  return partie.ecoule + (ui.demarre ? Date.now() - ui.demarre : 0);
 }
 
 function formaterTemps(ms) {
@@ -272,24 +283,22 @@ function rendreChrono() {
 }
 
 function demarrerChrono() {
-  if (jeu.demarre || jeu.fini) return;
-  jeu.demarre = Date.now();
-  jeu.minuteur = setInterval(rendreChrono, 500);
+  if (!partie || ui.demarre || partie.fini) return;
+  ui.demarre = Date.now();
+  ui.minuteur = setInterval(rendreChrono, 500);
 }
 
 function arreterChrono() {
-  if (jeu.demarre) {
-    jeu.ecoule += Date.now() - jeu.demarre;
-    jeu.demarre = null;
-  }
-  clearInterval(jeu.minuteur);
-  jeu.minuteur = null;
+  if (ui.demarre && partie) partie.ecoule += Date.now() - ui.demarre;
+  ui.demarre = null;
+  clearInterval(ui.minuteur);
+  ui.minuteur = null;
   rendreChrono();
 }
 
 // Le chrono s'arrête quand l'app passe en arrière-plan, et repart au premier geste.
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden && jeu.puzzle) {
+  if (document.hidden && partie) {
     arreterChrono();
     sauvegarder();
   }
@@ -308,8 +317,8 @@ function changerReglage(cle, valeur) {
   reglages = { ...reglages, [cle]: valeur };
   sauvegarderReglages(reglages);
   appliquerReglages();
-  if (cle === 'autoCroix' && jeu.puzzle && !jeu.fini) {
-    recalculerAuto();
+  if (cle === 'autoCroix' && partie && !partie.fini) {
+    updateAutoCrosses(partie, valeur);
     rendreTout();
     sauvegarder();
   }
@@ -365,11 +374,13 @@ $('btn-aide').addEventListener('click', ouvrirTuto);
 $('tuto-prec').addEventListener('click', () => montrerEtape(etape - 1));
 $('tuto-suiv').addEventListener('click', () => (etape === etapes.length - 1 ? fermerTuto() : montrerEtape(etape + 1)));
 
+demarrerWorker();
 appliquerReglages();
+rendreStats();
 if (!reprendre()) partieDuJour();
 if (!reglages.tutoVu) ouvrirTuto();
 
 // Hors ligne : le service worker garde une copie du jeu dans le téléphone.
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').catch(() => {});
+  navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch(() => {});
 }

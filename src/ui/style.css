@@ -65,7 +65,9 @@ body {
 .chrono { font-variant-numeric: tabular-nums; font-size: 1.05rem; min-width: 3.2em; text-align: right; }
 button.icone { width: 34px; height: 34px; padding: 0; border-radius: 50%; font-size: 1.05rem; line-height: 1; display: grid; place-items: center; }
 
-main { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 8px 16px; }
+main { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 8px 16px; }
+.attente { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; font-weight: 600; text-shadow: 0 1px 2px var(--bg); }
+.attente[hidden] { display: none; }
 
 /* ---------- Plateau ---------- */
 .plateau {
@@ -121,6 +123,7 @@ main { flex: 1; display: flex; flex-direction: column; justify-content: center; 
   75% { transform: translateX(4px); background-color: var(--danger); }
 }
 .plateau.fini .case { cursor: default; }
+.plateau.occupe { opacity: 0.35; pointer-events: none; transition: opacity 0.2s; }
 
 /* Motifs pour daltonisme : un dessin par alpage, par-dessus la couleur. */
 .motifs .case.m1 { background-image: repeating-linear-gradient(45deg, var(--encre) 0 2px, transparent 2px 8px); }

@@ -6,7 +6,7 @@
 // RÈGLE : toute modification d'un fichier servi exige d'incrémenter CACHE ci-dessous,
 // sinon les téléphones gardent l'ancienne version.
 
-const CACHE = 'alpage-v3';
+const CACHE = 'alpage-v4';
 const FICHIERS = [
   './',
   './index.html',
@@ -14,20 +14,28 @@ const FICHIERS = [
   './src/ui/style.css',
   './src/ui/app.js',
   './src/ui/storage.js',
+  './src/ui/worker.js',
   './src/engine/index.js',
   './src/engine/rules.js',
   './src/engine/random.js',
   './src/engine/solver.js',
   './src/engine/generator.js',
   './src/engine/daily.js',
+  './src/engine/game.js',
   './icons/icon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable-512.png',
 ];
 
+// `cache: 'reload'` : GitHub Pages autorise le navigateur à garder chaque fichier 10 minutes ;
+// sans cette option, une version publiée peu après la précédente se remplirait d'anciens fichiers.
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(FICHIERS)).then(() => self.skipWaiting()));
+  event.waitUntil(
+    caches.open(CACHE)
+      .then((c) => c.addAll(FICHIERS.map((f) => new Request(f, { cache: 'reload' }))))
+      .then(() => self.skipWaiting()),
+  );
 });
 
 self.addEventListener('activate', (event) => {
