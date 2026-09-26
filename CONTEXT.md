@@ -39,16 +39,29 @@ Un puzzle n'a qu'une seule solution : tout se déduit, rien ne se devine.
 | # | Lot | Contenu | Statut |
 |---|-----|---------|--------|
 | 0 | Cadre | Dépôt, fichier d'état, licence GPL-3.0, README, remote GitHub public. | Fait |
-| 1 | Moteur | Règles, solveur avec unicité, générateur, graine quotidienne, 16 tests. | Fait |
-| 2 | Interface | Plateau tactile plein écran, tap = croix « pas ici », double-tap = marmotte, sifflets, détection de victoire, chrono, vibration. | À faire |
-| 3 | Modes & progression | Puzzle du jour, partie libre par taille (5×5 à 10×10), reprise de la partie en cours, statistiques locales (série quotidienne, meilleurs temps). | À faire |
-| 4 | PWA | `manifest.json`, service worker hors ligne (cache-first), icônes, CSP stricte, activation de GitHub Pages. | À faire |
-| 5 | Finitions | Thème visuel montagne, mode sombre, motifs pour daltonisme, tutoriel 3 écrans, mode zen sans sifflets (option). | À faire |
-| 6 | Vérification Pixel | Installation, test en mode avion, preuve de zéro requête réseau, APK optionnel. | À faire |
+| 1 | Moteur | Règles, solveur avec unicité, générateur, graine quotidienne, tests. | Fait |
+| 2 | Interface | Plateau tactile, tap = croix → marmotte → vide, sifflets, victoire/défaite, chrono, vibration. | Fait |
+| 3 | Modes & progression | Puzzle du jour, partie libre 5×5 à 10×10, reprise de la partie en cours, statistiques locales (série, réussis, record par taille). | Fait |
+| 4 | PWA | Manifeste, service worker hors ligne (vérifié serveur coupé), icônes, CSP stricte, GitHub Pages activé. | Fait |
+| 5 | Finitions | Thème visuel montagne, motifs pour daltonisme, tutoriel, croix automatiques (option), mode zen sans sifflets (option). | À faire |
+| 6 | Vérification Pixel | Installation par Fabrizio, test en mode avion, preuve de zéro requête réseau (Chrome distant), APK optionnel. | À faire |
+
+## Installer sur le Pixel (à faire par Fabrizio, une fois)
+1. Ouvrir https://fabrizio1305.github.io/alpage/ dans Chrome.
+2. Menu ⋮ → « Ajouter à l'écran d'accueil » (ou « Installer l'application »).
+3. Lancer Alpage depuis l'écran d'accueil, puis passer en mode avion et vérifier qu'il joue.
+Les mises à jour arrivent seules au lancement suivant quand le téléphone est en ligne.
+
+## Vérifié le 2026-09-26 (navigateur intégré, écran 375×812)
+- Partie complète par script : erreur → sifflet perdu, solution → victoire, statistiques et série.
+- Rechargement en cours de partie : marmottes et sifflets repris.
+- Serveur local coupé : la page se charge depuis le cache du service worker.
+- 19 tests `npm test` verts (moteur + stockage).
 
 ## Prochaine action recommandée
-Claude démarre le lot 2 (interface de jeu) : rien n'attend Fabrizio.
+Fabrizio installe le jeu sur le Pixel et dit ce qui gêne (taille des cases, couleurs, lisibilité) → lot 5.
 
 ## Journal
 - 2026-09-26 : cadrage, règles transcrites, plan par lots. Thème, GitHub Pages et GPL-3.0 validés.
   Lot 1 livré : moteur + 16 tests verts. Dépôt public `Fabrizio1305/alpage` créé et poussé.
+  Lots 2-4 livrés : jeu jouable, sauvegarde locale, PWA hors ligne, GitHub Pages activé.
