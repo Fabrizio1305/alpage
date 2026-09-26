@@ -76,12 +76,13 @@ les lots »).
 | # | Lot correctif | Contenu | Statut |
 |---|-----|---------|--------|
 | A1 | Documentation | Fichier d'état réaligné (défauts, version du cache), README avec l'adresse du jeu. | Fait |
-| A2 | Confort de jeu | Tap sur une croix automatique ignoré ; zen exclu des records ; bouton « Voir la grille » ; chrono qui reprend au retour. | À faire |
-| A3 | Robustesse | État de partie extrait dans `src/engine/game.js` et testé ; génération dans un Web Worker ; service worker qui contourne le cache HTTP de Pages (10 min). | À faire |
-| A4 | Paysage | Disposition en deux colonnes quand l'écran est bas. | À faire |
+| A2 | Confort de jeu | Tap sur une croix automatique ignoré ; zen exclu des records (compte pour la série) ; bouton « Voir la grille » ; chrono qui reprend au retour et après rechargement. | Fait |
+| A3 | Robustesse | État de partie extrait dans `src/engine/game.js` et testé ; génération dans `src/ui/worker.js` (8 grilles 10×10 sans aucune tâche bloquante) ; service worker en `cache: 'reload'` contre le cache HTTP de Pages (`max-age=600`, vérifié). Fait avant A2 pour tester les règles. | Fait |
+| A4 | Paysage | Deux colonnes sous 520 px de haut : cases de 42 px au lieu de 22 px en 915×412. L'app installée reste verrouillée en portrait (manifeste). | Fait |
+| A5 | Langues et vie privée (demande de Fabrizio) | Interface en français, allemand, italien, romanche et anglais ; mention « sans pub, sans pistage » visible et encadré vie privée dans les réglages. | En cours |
 
 ## Prochaine action recommandée
-Claude enchaîne les lots A2 à A4 (déjà approuvés) : rien n'attend Fabrizio.
+Claude termine le lot A5 (langues et mention vie privée) : rien n'attend Fabrizio.
 
 ## Journal
 - 2026-09-26 : cadrage, règles transcrites, plan par lots. Thème, GitHub Pages et GPL-3.0 validés.
@@ -90,4 +91,5 @@ Claude enchaîne les lots A2 à A4 (déjà approuvés) : rien n'attend Fabrizio.
   Lot 6 : installé sur le Pixel, fonctionne en mode avion. Version 1 jouable.
   Lot 5 livré : réglages, zen, tutoriel, motifs, habillage ; service worker versionné (v2).
   Réglages désactivés par défaut, migration des réglages enregistrés en v1 (cache v3).
-  Audit Fable : 9 constats, aucun bloquant ; lots A1 à A4 approuvés.
+  Audit Fable : 9 constats, aucun bloquant ; lots A1 à A4 approuvés puis livrés (cache v6).
+  Demande A5 : traduction (langues suisses + anglais) et mention vie privée dans l'interface.

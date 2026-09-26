@@ -190,3 +190,20 @@ select { font: inherit; padding: 8px 10px; border-radius: 10px; border: 1px soli
 .points { display: flex; gap: 6px; justify-content: center; margin: 4px 0 14px; }
 .points span { width: 8px; height: 8px; border-radius: 50%; background: var(--line-thin); }
 .points span.actif { background: var(--accent); }
+
+/* ---------- Écran bas (paysage) : plateau à gauche, commandes à droite ---------- */
+@media (orientation: landscape) and (max-height: 520px) {
+  body {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto 1fr auto auto;
+    grid-template-areas: "main haut" "main ." "main actions" "main stats";
+    column-gap: 8px;
+  }
+  .haut { grid-area: haut; padding-top: 12px; }
+  main { grid-area: main; padding: 10px 0 10px 12px; }
+  .actions { grid-area: actions; }
+  .stats { grid-area: stats; }
+  .aide { display: none; }
+  .plateau { width: min(100dvh - 26px, 100vw - 330px, 560px); }
+}
