@@ -44,7 +44,7 @@ Un puzzle n'a qu'une seule solution : tout se déduit, rien ne se devine.
 | 3 | Modes & progression | Puzzle du jour, partie libre 5×5 à 10×10, reprise de la partie en cours, statistiques locales (série, réussis, record par taille). | Fait |
 | 4 | PWA | Manifeste, service worker hors ligne (vérifié serveur coupé), icônes, CSP stricte, GitHub Pages activé. | Fait |
 | 5 | Finitions | Thème visuel montagne, motifs pour daltonisme, tutoriel, croix automatiques (option), mode zen sans sifflets (option). | À faire |
-| 6 | Vérification Pixel | Installation par Fabrizio, test en mode avion, preuve de zéro requête réseau (Chrome distant), APK optionnel. | À faire |
+| 6 | Vérification Pixel | Installé sur le Pixel 8 Pro, joue en mode avion (Fabrizio, 2026-09-26). Zéro requête externe vérifié depuis l'adresse publique. APK jugé inutile. | Fait |
 
 ## Installer sur le Pixel (à faire par Fabrizio, une fois)
 1. Ouvrir https://fabrizio1305.github.io/alpage/ dans Chrome.
@@ -59,9 +59,10 @@ Les mises à jour arrivent seules au lancement suivant quand le téléphone est 
 - 19 tests `npm test` verts (moteur + stockage).
 
 ## Prochaine action recommandée
-Fabrizio installe le jeu sur le Pixel et dit ce qui gêne (taille des cases, couleurs, lisibilité) → lot 5.
+Fabrizio choisit ce qui vaut le coup dans le lot 5 (ou décide que le jeu est fini tel quel).
 
 ## Journal
 - 2026-09-26 : cadrage, règles transcrites, plan par lots. Thème, GitHub Pages et GPL-3.0 validés.
   Lot 1 livré : moteur + 16 tests verts. Dépôt public `Fabrizio1305/alpage` créé et poussé.
   Lots 2-4 livrés : jeu jouable, sauvegarde locale, PWA hors ligne, GitHub Pages activé.
+  Lot 6 : installé sur le Pixel, fonctionne en mode avion. Version 1 jouable.
