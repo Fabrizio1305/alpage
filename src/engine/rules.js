@@ -71,3 +71,16 @@ export function isSolved(puzzle, cells) {
   }
   return count === size;
 }
+
+/** Cases qu'une marmotte en `i` interdit : sa ligne, sa colonne, son alpage et ses voisines. */
+export function cellsCoveredBy(puzzle, i) {
+  const { size, regions } = puzzle;
+  const r = Math.floor(i / size), c = i % size;
+  const out = [];
+  for (let j = 0; j < size * size; j++) {
+    if (j === i) continue;
+    const rj = Math.floor(j / size), cj = j % size;
+    if (rj === r || cj === c || regions[j] === regions[i] || areAdjacent(r, c, rj, cj)) out.push(j);
+  }
+  return out;
+}

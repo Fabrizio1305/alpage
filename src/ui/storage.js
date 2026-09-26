@@ -3,6 +3,7 @@
 
 const CLE_PARTIE = 'alpage.partie';
 const CLE_STATS = 'alpage.stats';
+const CLE_REGLAGES = 'alpage.reglages';
 
 function lire(cle) {
   try {
@@ -58,3 +59,11 @@ export function enregistrerVictoire({ size, temps, cleJour }) {
   ecrire(CLE_STATS, stats);
   return stats;
 }
+
+export const REGLAGES_DEFAUT = { autoCroix: true, zen: false, motifs: false, tutoVu: false };
+
+export function chargerReglages() {
+  return { ...REGLAGES_DEFAUT, ...(lire(CLE_REGLAGES) ?? {}) };
+}
+
+export const sauvegarderReglages = (reglages) => ecrire(CLE_REGLAGES, reglages);

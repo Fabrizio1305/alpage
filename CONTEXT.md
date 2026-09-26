@@ -30,6 +30,10 @@ Un puzzle n'a qu'une seule solution : tout se déduit, rien ne se devine.
   `src/engine/`, testé avec `node --test` (Node 22) ; puzzle du jour = générateur déterministe
   à partir de la date locale, taille selon le jour (lun 6, mar-mer 7, jeu-ven 8, sam-dim 9,
   réglable dans `src/engine/daily.js`).
+- **Service worker** : cache versionné (`CACHE = 'alpage-vN'` dans `sw.js`), servi depuis le
+  cache uniquement ; une nouvelle version se télécharge en bloc puis bascule, jamais de mélange
+  ancien HTML / nouveau script (constaté une fois avec l'ancienne stratégie). Contrepartie :
+  incrémenter `CACHE` à chaque publication (règle dans `CLAUDE.md`, liste vérifiée par test).
 - **Générateur** : placement aléatoire valide → alpages qui poussent avec des appétits
   différents → réparation de l'unicité en déplaçant une case de chaque solution parasite vers
   un alpage voisin (connexité préservée). Mesuré sur le PC : 10×10 en 20 ms en moyenne,
@@ -43,7 +47,7 @@ Un puzzle n'a qu'une seule solution : tout se déduit, rien ne se devine.
 | 2 | Interface | Plateau tactile, tap = croix → marmotte → vide, sifflets, victoire/défaite, chrono, vibration. | Fait |
 | 3 | Modes & progression | Puzzle du jour, partie libre 5×5 à 10×10, reprise de la partie en cours, statistiques locales (série, réussis, record par taille). | Fait |
 | 4 | PWA | Manifeste, service worker hors ligne (vérifié serveur coupé), icônes, CSP stricte, GitHub Pages activé. | Fait |
-| 5 | Finitions | Thème visuel montagne, motifs pour daltonisme, tutoriel, croix automatiques (option), mode zen sans sifflets (option). | À faire |
+| 5 | Finitions | Croix automatiques (réglage, actif par défaut), mode zen sans sifflets avec conflits surlignés (prochaine partie), tutoriel 3 étapes au premier lancement et bouton « ? », motifs pour daltonisme (réglage), habillage montagne clair/sombre. | Fait |
 | 6 | Vérification Pixel | Installé sur le Pixel 8 Pro, joue en mode avion (Fabrizio, 2026-09-26). Zéro requête externe vérifié depuis l'adresse publique. APK jugé inutile. | Fait |
 
 ## Installer sur le Pixel (à faire par Fabrizio, une fois)
@@ -58,11 +62,20 @@ Les mises à jour arrivent seules au lancement suivant quand le téléphone est 
 - Serveur local coupé : la page se charge depuis le cache du service worker.
 - 19 tests `npm test` verts (moteur + stockage).
 
+## Vérifié le 2026-09-26 (lot 5, navigateur intégré 375×812, clair et sombre)
+- Tutoriel au premier lancement, 3 étapes illustrées, marqué vu ; réouvrable par « ? ».
+- Croix automatiques : 33 croix attendues et posées pour une marmotte en 9×9 ; retirées au retrait.
+- Réglages persistants ; motifs visibles ; mode zen : badge, sifflets masqués, 2 conflits
+  surlignés puis effacés.
+- 24 tests `npm test` verts.
+
 ## Prochaine action recommandée
-Fabrizio choisit ce qui vaut le coup dans le lot 5 (ou décide que le jeu est fini tel quel).
+Fabrizio relance Alpage sur le Pixel, en ligne, deux fois (la première télécharge la nouvelle
+version, la seconde l'affiche) et signale ce qui gêne. Sinon, le projet est terminé.
 
 ## Journal
 - 2026-09-26 : cadrage, règles transcrites, plan par lots. Thème, GitHub Pages et GPL-3.0 validés.
   Lot 1 livré : moteur + 16 tests verts. Dépôt public `Fabrizio1305/alpage` créé et poussé.
   Lots 2-4 livrés : jeu jouable, sauvegarde locale, PWA hors ligne, GitHub Pages activé.
   Lot 6 : installé sur le Pixel, fonctionne en mode avion. Version 1 jouable.
+  Lot 5 livré : réglages, zen, tutoriel, motifs, habillage ; service worker versionné (v2).

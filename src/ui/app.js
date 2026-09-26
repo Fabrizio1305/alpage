@@ -1,11 +1,14 @@
-// Interface de jeu : rendu du plateau, interactions, sifflets, chrono, sauvegarde locale.
+// Interface de jeu : plateau, interactions, sifflets, chrono, réglages, tutoriel, sauvegarde.
 // Aucune donnée ne sort du téléphone : tout tourne dans cette page.
 
 import {
   EMPTY, CROSS, MARMOT, MIN_SIZE, MAX_SIZE,
-  generatePuzzle, dailyPuzzle, dateKey, isSolved,
+  generatePuzzle, dailyPuzzle, dateKey, isSolved, findConflicts, cellsCoveredBy,
 } from '../engine/index.js';
-import { chargerPartie, sauvegarderPartie, chargerStats, enregistrerVictoire, serieCourante } from './storage.js';
+import {
+  chargerPartie, sauvegarderPartie, chargerStats, enregistrerVictoire, serieCourante,
+  chargerReglages, sauvegarderReglages,
+} from './storage.js';
 
 const SIFFLETS_MAX = 3;
 
@@ -17,11 +20,17 @@ const voile = $('voile');
 const taille = $('taille');
 const stats = $('stats');
 
+let reglages = chargerReglages();
+
 const jeu = {
   puzzle: null,
   mode: 'jour',      // 'jour' ou 'libre'
   cleJour: null,     // date du puzzle du jour, null en partie libre
-  cells: [],
+  zen: false,        // sans sifflets, conflits surlignés
+  cells: [],         // EMPTY / CROSS / MARMOT
+  manuel: [],        // true si la croix a été posée par le joueur
+  auto: [],          // nombre de marmottes qui interdisent la case
+  rendu: [],         // dernier état dessiné par case (évite de redessiner pour rien)
   sifflets: SIFFLETS_MAX,
   fini: false,
   demarre: null,     // horodatage du premier geste
@@ -35,21 +44,27 @@ function graineAleatoire() {
   return crypto.getRandomValues(new Uint32Array(1))[0];
 }
 
-function nouvellePartie(puzzle, mode, cleJour = null) {
+function installer(partie) {
   arreterChrono();
-  jeu.puzzle = puzzle;
-  jeu.mode = mode;
-  jeu.cleJour = cleJour;
-  jeu.cells = new Array(puzzle.size * puzzle.size).fill(EMPTY);
-  jeu.sifflets = SIFFLETS_MAX;
-  jeu.fini = false;
-  jeu.demarre = null;
-  jeu.ecoule = 0;
+  Object.assign(jeu, partie, { fini: false, demarre: null, minuteur: null });
+  const n = jeu.puzzle.size ** 2;
+  if (jeu.manuel.length !== n) jeu.manuel = new Array(n).fill(false);
   voile.hidden = true;
   construirePlateau();
+  recalculerAuto();
+  rendreTout();
   rendreSifflets();
   rendreChrono();
   rendreStats();
+}
+
+function nouvellePartie(puzzle, mode, cleJour = null) {
+  const n = puzzle.size ** 2;
+  installer({
+    puzzle, mode, cleJour, zen: reglages.zen,
+    cells: new Array(n).fill(EMPTY), manuel: new Array(n).fill(false),
+    sifflets: SIFFLETS_MAX, ecoule: 0,
+  });
   sauvegarder();
 }
 
@@ -71,23 +86,17 @@ function reprendre() {
   const s = chargerPartie();
   if (!s || s.fini || !s.puzzle || !Array.isArray(s.cells)) return false;
   if (s.mode === 'jour' && s.cleJour !== dateKey()) return false; // le puzzle du jour a changé
-  arreterChrono();
-  Object.assign(jeu, {
-    puzzle: s.puzzle, mode: s.mode, cleJour: s.cleJour ?? null, cells: s.cells,
-    sifflets: s.sifflets, fini: false, demarre: null, ecoule: s.ecoule ?? 0,
+  installer({
+    puzzle: s.puzzle, mode: s.mode, cleJour: s.cleJour ?? null, zen: !!s.zen,
+    cells: s.cells, manuel: s.manuel ?? [], sifflets: s.sifflets, ecoule: s.ecoule ?? 0,
   });
-  voile.hidden = true;
-  construirePlateau();
-  rendreSifflets();
-  rendreChrono();
-  rendreStats();
   return true;
 }
 
 function sauvegarder() {
   sauvegarderPartie({
-    puzzle: jeu.puzzle, mode: jeu.mode, cleJour: jeu.cleJour, cells: jeu.cells,
-    sifflets: jeu.sifflets, fini: jeu.fini, ecoule: tempsEcoule(),
+    puzzle: jeu.puzzle, mode: jeu.mode, cleJour: jeu.cleJour, zen: jeu.zen, cells: jeu.cells,
+    manuel: jeu.manuel, sifflets: jeu.sifflets, fini: jeu.fini, ecoule: tempsEcoule(),
   });
 }
 
@@ -98,35 +107,62 @@ function construirePlateau() {
   plateau.style.setProperty('--n', size);
   plateau.classList.remove('fini');
   plateau.replaceChildren();
+  jeu.rendu = new Array(size * size).fill('');
   for (let i = 0; i < size * size; i++) {
     const row = Math.floor(i / size), col = i % size;
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'case';
+    b.className = `case m${regions[i] % 10}`;
     b.style.setProperty('--couleur', `var(--r${regions[i] % 10})`);
     if (row > 0 && regions[i - size] !== regions[i]) b.classList.add('bt');
     if (col > 0 && regions[i - 1] !== regions[i]) b.classList.add('bl');
     b.addEventListener('click', () => toucher(i));
     plateau.appendChild(b);
-    rendreCase(i);
   }
 }
 
 function rendreCase(i) {
+  const etat = jeu.cells[i];
+  const cle = `${etat}${etat === CROSS && !jeu.manuel[i] ? 'a' : ''}`;
+  if (jeu.rendu[i] === cle) return;
+  jeu.rendu[i] = cle;
   const b = plateau.children[i];
   const { size, regions } = jeu.puzzle;
-  const etat = jeu.cells[i];
   b.replaceChildren();
   if (etat === CROSS) {
     const s = document.createElement('span');
-    s.className = 'croix';
+    s.className = jeu.manuel[i] ? 'croix' : 'croix auto';
     s.textContent = '✕';
     b.appendChild(s);
   } else if (etat === MARMOT) {
     b.insertAdjacentHTML('beforeend', '<svg class="marmot"><use href="#marmotte"/></svg>');
   }
+  if (etat !== MARMOT) b.classList.remove('pose');
   const contenu = etat === CROSS ? 'croix' : etat === MARMOT ? 'marmotte' : 'vide';
   b.setAttribute('aria-label', `Ligne ${Math.floor(i / size) + 1}, colonne ${i % size + 1}, alpage ${regions[i] + 1}, ${contenu}`);
+}
+
+function rendreTout() {
+  for (let i = 0; i < jeu.cells.length; i++) rendreCase(i);
+  const conflits = new Set(jeu.zen ? findConflicts(jeu.puzzle, jeu.cells) : []);
+  for (let i = 0; i < jeu.cells.length; i++) plateau.children[i].classList.toggle('conflit', conflits.has(i));
+}
+
+/** Croix automatiques : recalculées depuis zéro à partir des marmottes posées. */
+function recalculerAuto() {
+  const n = jeu.cells.length;
+  jeu.auto = new Array(n).fill(0);
+  if (reglages.autoCroix) {
+    for (let i = 0; i < n; i++) {
+      if (jeu.cells[i] !== MARMOT) continue;
+      for (const j of cellsCoveredBy(jeu.puzzle, i)) jeu.auto[j]++;
+    }
+  }
+  for (let j = 0; j < n; j++) {
+    if (jeu.cells[j] === MARMOT) continue;
+    if (jeu.auto[j] > 0 && jeu.cells[j] === EMPTY) jeu.cells[j] = CROSS;
+    else if (jeu.auto[j] === 0 && jeu.cells[j] === CROSS && !jeu.manuel[j]) jeu.cells[j] = EMPTY;
+  }
 }
 
 // ---------- Interactions ----------
@@ -138,10 +174,13 @@ function toucher(i) {
   const etat = jeu.cells[i];
   if (etat === EMPTY) {
     jeu.cells[i] = CROSS;
+    jeu.manuel[i] = true;
   } else if (etat === CROSS) {
     const { size, solution } = jeu.puzzle;
-    if (solution[Math.floor(i / size)] === i % size) {
+    const bonne = solution[Math.floor(i / size)] === i % size;
+    if (bonne || jeu.zen) {
       jeu.cells[i] = MARMOT;
+      jeu.manuel[i] = false;
       b.classList.add('pose');
       navigator.vibrate?.(15);
     } else {
@@ -150,9 +189,10 @@ function toucher(i) {
     }
   } else {
     jeu.cells[i] = EMPTY;
-    b.classList.remove('pose');
+    jeu.manuel[i] = false;
   }
-  rendreCase(i);
+  recalculerAuto();
+  rendreTout();
   if (isSolved(jeu.puzzle, jeu.cells)) gagner();
   else sauvegarder();
 }
@@ -200,6 +240,8 @@ function afficherVoile(titre, texte, rejouable) {
 // ---------- Sifflets, chrono, statistiques ----------
 
 function rendreSifflets() {
+  sifflets.hidden = jeu.zen;
+  $('badge-zen').hidden = !jeu.zen;
   sifflets.replaceChildren();
   for (let k = 0; k < SIFFLETS_MAX; k++) {
     sifflets.insertAdjacentHTML('beforeend', `<svg class="${k < jeu.sifflets ? '' : 'perdu'}"><use href="#sifflet"/></svg>`);
@@ -253,6 +295,53 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
+// ---------- Réglages ----------
+
+function appliquerReglages() {
+  document.body.classList.toggle('motifs', reglages.motifs);
+  $('reg-autoCroix').checked = reglages.autoCroix;
+  $('reg-zen').checked = reglages.zen;
+  $('reg-motifs').checked = reglages.motifs;
+}
+
+function changerReglage(cle, valeur) {
+  reglages = { ...reglages, [cle]: valeur };
+  sauvegarderReglages(reglages);
+  appliquerReglages();
+  if (cle === 'autoCroix' && jeu.puzzle && !jeu.fini) {
+    recalculerAuto();
+    rendreTout();
+    sauvegarder();
+  }
+}
+
+// ---------- Tutoriel ----------
+
+const etapes = [...document.querySelectorAll('#tuto .etape')];
+let etape = 0;
+
+function montrerEtape(k) {
+  etape = Math.max(0, Math.min(etapes.length - 1, k));
+  etapes.forEach((e, i) => { e.hidden = i !== etape; });
+  $('tuto-points').replaceChildren(...etapes.map((_, i) => {
+    const s = document.createElement('span');
+    if (i === etape) s.className = 'actif';
+    return s;
+  }));
+  $('tuto-prec').hidden = etape === 0;
+  $('tuto-suiv').textContent = etape === etapes.length - 1 ? 'Jouer' : 'Suivant';
+}
+
+function ouvrirTuto() {
+  montrerEtape(0);
+  $('tuto').hidden = false;
+}
+
+function fermerTuto() {
+  $('tuto').hidden = true;
+  if (!reglages.tutoVu) changerReglage('tutoVu', true);
+}
+
 // ---------- Démarrage ----------
 
 for (let n = MIN_SIZE; n <= MAX_SIZE; n++) {
@@ -267,9 +356,18 @@ $('btn-jour').addEventListener('click', partieDuJour);
 $('btn-libre').addEventListener('click', partieLibre);
 $('btn-rejouer').addEventListener('click', rejouer);
 $('btn-nouveau').addEventListener('click', partieLibre);
-$('btn-jour').classList.add('principal');
+$('btn-reglages').addEventListener('click', () => { $('reglages').hidden = false; });
+$('btn-reglages-fermer').addEventListener('click', () => { $('reglages').hidden = true; });
+for (const cle of ['autoCroix', 'zen', 'motifs']) {
+  $(`reg-${cle}`).addEventListener('change', (e) => changerReglage(cle, e.target.checked));
+}
+$('btn-aide').addEventListener('click', ouvrirTuto);
+$('tuto-prec').addEventListener('click', () => montrerEtape(etape - 1));
+$('tuto-suiv').addEventListener('click', () => (etape === etapes.length - 1 ? fermerTuto() : montrerEtape(etape + 1)));
 
+appliquerReglages();
 if (!reprendre()) partieDuJour();
+if (!reglages.tutoVu) ouvrirTuto();
 
 // Hors ligne : le service worker garde une copie du jeu dans le téléphone.
 if ('serviceWorker' in navigator) {

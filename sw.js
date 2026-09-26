@@ -1,8 +1,12 @@
 // Service worker : le jeu est copié dans le téléphone au premier lancement, puis servi
-// depuis cette copie. À chaque lancement en ligne, la copie est rafraîchie en arrière-plan
-// (seules requêtes réseau du jeu : vers sa propre adresse). Hors ligne, tout marche.
+// uniquement depuis cette copie (aucune requête réseau pour jouer). Quand une nouvelle
+// version est publiée, le navigateur détecte que ce fichier a changé, télécharge tous les
+// fichiers en bloc dans un nouveau cache, puis bascule : jamais de mélange de versions.
+//
+// RÈGLE : toute modification d'un fichier servi exige d'incrémenter CACHE ci-dessous,
+// sinon les téléphones gardent l'ancienne version.
 
-const CACHE = 'alpage-v1';
+const CACHE = 'alpage-v2';
 const FICHIERS = [
   './',
   './index.html',
@@ -38,15 +42,6 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
   event.respondWith(
-    caches.open(CACHE).then(async (cache) => {
-      const enCache = await cache.match(request, { ignoreSearch: true });
-      const rafraichi = fetch(request)
-        .then((reponse) => {
-          if (reponse.ok) cache.put(request, reponse.clone());
-          return reponse;
-        })
-        .catch(() => enCache);
-      return enCache || rafraichi;
-    }),
+    caches.match(request, { ignoreSearch: true }).then((enCache) => enCache || fetch(request)),
   );
 });

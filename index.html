@@ -33,18 +33,21 @@
   </svg>
 
   <header class="haut">
-    <h1>Alpage</h1>
+    <h1><svg class="logo"><use href="#marmotte"/></svg>Alpage</h1>
     <div class="sifflets" id="sifflets" role="status" aria-label="Sifflets restants"></div>
+    <span class="badge" id="badge-zen" hidden>zen</span>
     <div class="chrono" id="chrono" aria-label="Temps écoulé">00:00</div>
+    <button class="icone" id="btn-aide" type="button" aria-label="Comment jouer">?</button>
+    <button class="icone" id="btn-reglages" type="button" aria-label="Réglages">⚙</button>
   </header>
 
   <main>
     <div id="plateau" class="plateau" role="grid" aria-label="Plateau de jeu"></div>
-    <p class="aide" id="aide">Une marmotte par alpage, par ligne et par colonne, jamais deux qui se touchent. Touchez une case : croix, puis marmotte, puis vide.</p>
+    <p class="aide" id="aide">Une marmotte par alpage, par ligne et par colonne, jamais deux qui se touchent.</p>
   </main>
 
   <nav class="actions" aria-label="Parties">
-    <button id="btn-jour" type="button">Puzzle du jour</button>
+    <button id="btn-jour" type="button" class="principal">Puzzle du jour</button>
     <label class="taille">Taille
       <select id="taille" aria-label="Taille de la grille"></select>
     </label>
@@ -58,7 +61,68 @@
       <p id="voile-texte"></p>
       <div class="carte-actions">
         <button id="btn-rejouer" type="button">Réessayer</button>
-        <button id="btn-nouveau" type="button">Nouvelle partie</button>
+        <button id="btn-nouveau" type="button" class="principal">Nouvelle partie</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="reglages" class="voile" hidden>
+    <div class="carte" role="dialog" aria-modal="true" aria-labelledby="reglages-titre">
+      <h2 id="reglages-titre">Réglages</h2>
+      <label class="reglage"><input type="checkbox" id="reg-autoCroix"><span><b>Croix automatiques</b><small>Poser une marmotte barre sa ligne, sa colonne, son alpage et ses voisines.</small></span></label>
+      <label class="reglage"><input type="checkbox" id="reg-zen"><span><b>Mode zen</b><small>Sans sifflets : les marmottes en conflit sont surlignées. Pour la prochaine partie.</small></span></label>
+      <label class="reglage"><input type="checkbox" id="reg-motifs"><span><b>Motifs sur les alpages</b><small>Distingue les alpages autrement que par la couleur.</small></span></label>
+      <div class="carte-actions"><button id="btn-reglages-fermer" type="button" class="principal">Fermer</button></div>
+    </div>
+  </div>
+
+  <div id="tuto" class="voile" hidden>
+    <div class="carte tuto" role="dialog" aria-modal="true" aria-labelledby="tuto-titre">
+      <section class="etape">
+        <svg viewBox="0 0 100 100" class="illustration" aria-hidden="true">
+          <rect x="0" y="0" width="50" height="50" class="a0"/><rect x="50" y="0" width="50" height="50" class="a1"/>
+          <rect x="0" y="50" width="50" height="50" class="a2"/><rect x="50" y="50" width="50" height="50" class="a3"/>
+          <path d="M25 0v100M75 0v100M0 25h100M0 75h100" class="fin"/>
+          <path d="M50 0v100M0 50h100" class="gros"/><rect x="1" y="1" width="98" height="98" class="gros"/>
+          <use href="#marmotte" x="27.5" y="2.5" width="20" height="20"/>
+          <use href="#marmotte" x="77.5" y="27.5" width="20" height="20"/>
+          <use href="#marmotte" x="2.5" y="52.5" width="20" height="20"/>
+          <use href="#marmotte" x="52.5" y="77.5" width="20" height="20"/>
+        </svg>
+        <h2 id="tuto-titre">Une marmotte par alpage</h2>
+        <p>Chaque zone colorée est un alpage. Placez une marmotte dans chaque alpage, chaque ligne et chaque colonne.</p>
+      </section>
+      <section class="etape" hidden>
+        <svg viewBox="0 0 220 100" class="illustration" aria-hidden="true">
+          <rect x="0" y="0" width="100" height="100" class="a4"/>
+          <path d="M33 0v100M66 0v100M0 33h100M0 66h100" class="fin"/><rect x="1" y="1" width="98" height="98" class="gros"/>
+          <use href="#marmotte" x="5" y="5" width="24" height="24"/><use href="#marmotte" x="38" y="38" width="24" height="24"/>
+          <path d="M40 8l20 20M60 8l-20 20" class="non"/>
+          <rect x="120" y="0" width="100" height="100" class="a6"/>
+          <path d="M153 0v100M186 0v100M120 33h100M120 66h100" class="fin"/><rect x="121" y="1" width="98" height="98" class="gros"/>
+          <use href="#marmotte" x="125" y="5" width="24" height="24"/><use href="#marmotte" x="191" y="71" width="24" height="24"/>
+          <path d="M160 50l8 8 16-16" class="oui"/>
+        </svg>
+        <h2>Chacune son territoire</h2>
+        <p>Deux marmottes ne se touchent jamais, même par un coin. Plus loin sur la diagonale, c'est permis.</p>
+      </section>
+      <section class="etape" hidden>
+        <svg viewBox="0 0 220 70" class="illustration" aria-hidden="true">
+          <rect x="0" y="5" width="60" height="60" class="a3"/><rect x="1" y="6" width="58" height="58" class="gros"/>
+          <path d="M68 35h20" class="fleche"/>
+          <rect x="80" y="5" width="60" height="60" class="a3"/><rect x="81" y="6" width="58" height="58" class="gros"/>
+          <path d="M98 23l24 24M122 23l-24 24" class="croix-ill"/>
+          <path d="M148 35h20" class="fleche"/>
+          <rect x="160" y="5" width="60" height="60" class="a3"/><rect x="161" y="6" width="58" height="58" class="gros"/>
+          <use href="#marmotte" x="167" y="12" width="46" height="46"/>
+        </svg>
+        <h2>Comment jouer</h2>
+        <p>Touchez une case : une croix (« pas ici »). Touchez encore : une marmotte. Une marmotte mal placée coûte un sifflet ; au troisième, les marmottes fuient. Tout se déduit, rien ne se devine.</p>
+      </section>
+      <div class="points" id="tuto-points" aria-hidden="true"></div>
+      <div class="carte-actions">
+        <button id="tuto-prec" type="button">Précédent</button>
+        <button id="tuto-suiv" type="button" class="principal">Suivant</button>
       </div>
     </div>
   </div>

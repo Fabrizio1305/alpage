@@ -9,3 +9,5 @@ quitte le téléphone.
   (pas de CDN, pas de police externe, pas d'analytics). CSP stricte dans `index.html`.
 - Logique de jeu pure dans `src/engine/` (testée avec `node --test`), interface dans `src/ui/`.
 - Textes de l'interface en français.
+- **Toute modification d'un fichier servi ⇒ incrémenter `CACHE` dans `sw.js`** (cache versionné,
+  mise à jour en bloc). Nouveau fichier ⇒ l'ajouter à la liste `FICHIERS` ; `npm test` le vérifie.

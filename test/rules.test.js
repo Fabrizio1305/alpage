@@ -49,3 +49,17 @@ test('résolu seulement avec exactement les marmottes de la solution', () => {
   cells[20] = MARMOT; // une marmotte de trop
   assert.equal(isSolved(P, cells), false);
 });
+
+test('cases interdites par une marmotte : ligne, colonne, alpage, voisines', async () => {
+  const { cellsCoveredBy } = await import('../src/engine/rules.js');
+  // Marmotte en (2,2), alpage 2 = cases 11 et 12 (ligne 2, colonnes 1 et 2).
+  const couvertes = cellsCoveredBy(P, 12);
+  assert.ok(!couvertes.includes(12), 'pas elle-même');
+  for (const j of [10, 11, 13, 14]) assert.ok(couvertes.includes(j), `ligne : ${j}`);
+  for (const j of [2, 7, 17, 22]) assert.ok(couvertes.includes(j), `colonne : ${j}`);
+  for (const j of [6, 8, 16, 18]) assert.ok(couvertes.includes(j), `coin : ${j}`);
+  assert.ok(!couvertes.includes(0), 'case lointaine hors alpage libre');
+  assert.ok(!couvertes.includes(24));
+  // Marmotte en (0,1), alpage 0 = toute la ligne 0 sauf (0,0) : (1,4) est dans l'alpage 0.
+  assert.ok(cellsCoveredBy(P, 1).includes(9), 'même alpage, ligne différente');
+});
