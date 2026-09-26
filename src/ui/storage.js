@@ -45,9 +45,10 @@ export function serieCourante(stats, aujourdhui) {
 
 /**
  * Enregistre une victoire. `cleJour` est la date du puzzle du jour (null en partie libre).
- * Le puzzle du jour ne compte qu'une fois par date.
+ * Le puzzle du jour ne compte qu'une fois par date. Une victoire en mode zen compte pour la
+ * série et les réussites, pas pour les records.
  */
-export function enregistrerVictoire({ size, temps, cleJour }) {
+export function enregistrerVictoire({ size, temps, cleJour, zen = false }) {
   const stats = chargerStats();
   if (cleJour) {
     if (stats.jour.derniere === cleJour) return stats;
@@ -55,7 +56,7 @@ export function enregistrerVictoire({ size, temps, cleJour }) {
     stats.jour.derniere = cleJour;
   }
   stats.reussis += 1;
-  if (!stats.meilleurs[size] || temps < stats.meilleurs[size]) stats.meilleurs[size] = temps;
+  if (!zen && (!stats.meilleurs[size] || temps < stats.meilleurs[size])) stats.meilleurs[size] = temps;
   ecrire(CLE_STATS, stats);
   return stats;
 }

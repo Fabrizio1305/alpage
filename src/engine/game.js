@@ -48,6 +48,8 @@ export function updateAutoCrosses(game, enabled) {
 export function tap(game, i, { autoCroix = false } = {}) {
   if (game.fini) return 'ignore';
   const etat = game.cells[i];
+  // Case interdite par une marmotte posée : ni sifflet perdu, ni conflit volontaire.
+  if (etat === CROSS && game.auto[i] > 0) return 'ignore';
   let resultat;
   if (etat === EMPTY) {
     game.cells[i] = CROSS;

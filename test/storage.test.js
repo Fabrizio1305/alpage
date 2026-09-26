@@ -37,6 +37,18 @@ test('partie libre : compte les réussites et le record sans toucher la série',
   assert.equal(s.jour.serie, 0);
 });
 
+test('mode zen : compte pour la série et les réussites, pas pour les records', () => {
+  memoire.clear();
+  enregistrerVictoire({ size: 6, temps: 50000, cleJour: '2026-09-26', zen: true });
+  let s = chargerStats();
+  assert.equal(s.reussis, 1);
+  assert.equal(s.jour.serie, 1);
+  assert.equal(s.meilleurs[6], undefined);
+  enregistrerVictoire({ size: 6, temps: 90000, cleJour: null });
+  s = chargerStats();
+  assert.equal(s.meilleurs[6], 90000, 'le premier record hors zen est retenu');
+});
+
 test('partie en cours : aller-retour et stockage cassé toléré', () => {
   memoire.clear();
   sauvegarderPartie({ mode: 'libre', cells: [0, 1] });

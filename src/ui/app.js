@@ -137,6 +137,7 @@ function reprendre() {
   if (!p || p.fini) return false;
   if (p.mode === 'jour' && p.cleJour !== dateKey()) return false; // le puzzle du jour a changé
   installer(p);
+  reprendreChrono();
   return true;
 }
 
@@ -226,10 +227,10 @@ function gagner() {
   navigator.vibrate?.([30, 30, 30, 30, 80]);
   const temps = partie.ecoule;
   const avant = chargerStats().meilleurs[partie.puzzle.size];
-  enregistrerVictoire({ size: partie.puzzle.size, temps, cleJour: partie.cleJour });
+  enregistrerVictoire({ size: partie.puzzle.size, temps, cleJour: partie.cleJour, zen: partie.zen });
   rendreStats();
   sauvegarder();
-  const record = !avant || temps < avant ? ' Nouveau record pour cette taille !' : '';
+  const record = !partie.zen && (!avant || temps < avant) ? ' Nouveau record pour cette taille !' : '';
   afficherVoile('Alpage en paix !', `Toutes les marmottes ont leur territoire en ${formaterTemps(temps)}.${record}`, false);
 }
 
@@ -296,11 +297,19 @@ function arreterChrono() {
   rendreChrono();
 }
 
-// Le chrono s'arrête quand l'app passe en arrière-plan, et repart au premier geste.
+/** Une partie commencée fait tourner le chrono dès qu'elle est à l'écran. */
+function reprendreChrono() {
+  if (partie && !partie.fini && partie.ecoule > 0 && !document.hidden) demarrerChrono();
+}
+
+// Le chrono s'arrête quand l'app passe en arrière-plan, et repart à son retour.
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden && partie) {
+  if (!partie) return;
+  if (document.hidden) {
     arreterChrono();
     sauvegarder();
+  } else {
+    reprendreChrono();
   }
 });
 
@@ -364,6 +373,7 @@ taille.value = 7;
 $('btn-jour').addEventListener('click', partieDuJour);
 $('btn-libre').addEventListener('click', partieLibre);
 $('btn-rejouer').addEventListener('click', rejouer);
+$('btn-voir').addEventListener('click', () => { voile.hidden = true; });
 $('btn-nouveau').addEventListener('click', partieLibre);
 $('btn-reglages').addEventListener('click', () => { $('reglages').hidden = false; });
 $('btn-reglages-fermer').addEventListener('click', () => { $('reglages').hidden = true; });

@@ -67,6 +67,19 @@ test('croix automatiques : posées autour d\'une marmotte, retirées avec elle, 
   assert.equal(g.cells[2], CROSS, 'croix manuelle conservée');
 });
 
+test('toucher une croix automatique ne fait rien, même sur une case fausse', () => {
+  const g = createGame(P);
+  tap(g, 12, { autoCroix: true });
+  tap(g, 12, { autoCroix: true }); // marmotte en (2,2) : (1,1) devient croix automatique
+  assert.equal(g.cells[6], CROSS);
+  assert.equal(tap(g, 6, { autoCroix: true }), 'ignore');
+  assert.equal(g.sifflets, SIFFLETS_MAX, 'aucun sifflet perdu');
+  assert.equal(g.cells[6], CROSS);
+  const zen = createGame(P, { zen: true });
+  tap(zen, 12, { autoCroix: true }); tap(zen, 12, { autoCroix: true });
+  assert.equal(tap(zen, 6, { autoCroix: true }), 'ignore', 'pas de conflit volontaire en zen');
+});
+
 test('désactiver les croix automatiques en cours de partie les efface', () => {
   const g = createGame(P);
   tap(g, 12, { autoCroix: true });
