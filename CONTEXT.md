@@ -87,8 +87,8 @@ les lots »).
 - Le manifeste (nom et description de l'app installée) reste en français.
 
 ## Prochaine action recommandée
-Fabrizio ouvre Alpage sur le Pixel, en ligne, deux fois de suite (la première télécharge la
-version v7, la seconde l'affiche), puis vérifie le bandeau vie privée et le choix de langue.
+Aucune : version 7 validée sur le Pixel par Fabrizio (2026-09-26). Seul point ouvert
+facultatif : faire relire le romanche avant une diffusion plus large.
 
 ## Journal
 - 2026-09-26 : cadrage, règles transcrites, plan par lots. Thème, GitHub Pages et GPL-3.0 validés.
@@ -100,3 +100,4 @@ version v7, la seconde l'affiche), puis vérifie le bandeau vie privée et le ch
   Audit Fable : 9 constats, aucun bloquant ; lots A1 à A4 approuvés puis livrés (cache v6).
   Demande A5 : traduction (langues suisses + anglais) et mention vie privée dans l'interface.
   A5 livré (cache v7) : 5 langues, bandeau et encadré vie privée ; 40 tests verts.
+  Version 7 validée sur le Pixel par Fabrizio.
