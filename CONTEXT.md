@@ -47,7 +47,7 @@ Un puzzle n'a qu'une seule solution : tout se déduit, rien ne se devine.
 | 2 | Interface | Plateau tactile, tap = croix → marmotte → vide, sifflets, victoire/défaite, chrono, vibration. | Fait |
 | 3 | Modes & progression | Puzzle du jour, partie libre 5×5 à 10×10, reprise de la partie en cours, statistiques locales (série, réussis, record par taille). | Fait |
 | 4 | PWA | Manifeste, service worker hors ligne (vérifié serveur coupé), icônes, CSP stricte, GitHub Pages activé. | Fait |
-| 5 | Finitions | Croix automatiques (réglage, actif par défaut), mode zen sans sifflets avec conflits surlignés (prochaine partie), tutoriel 3 étapes au premier lancement et bouton « ? », motifs pour daltonisme (réglage), habillage montagne clair/sombre. | Fait |
+| 5 | Finitions | Croix automatiques (réglage), mode zen sans sifflets avec conflits surlignés (prochaine partie), tutoriel 3 étapes au premier lancement et bouton « ? », motifs pour daltonisme (réglage), habillage montagne clair/sombre. Les trois réglages sont **désactivés par défaut** (demande de Fabrizio, 2026-09-26). | Fait |
 | 6 | Vérification Pixel | Installé sur le Pixel 8 Pro, joue en mode avion (Fabrizio, 2026-09-26). Zéro requête externe vérifié depuis l'adresse publique. APK jugé inutile. | Fait |
 
 ## Installer sur le Pixel (à faire par Fabrizio, une fois)
@@ -69,9 +69,19 @@ Les mises à jour arrivent seules au lancement suivant quand le téléphone est 
   surlignés puis effacés.
 - 24 tests `npm test` verts.
 
+## Audit du 2026-09-26 (Fable) — lots correctifs
+Verdict : jeu utilisable, rien de cassé. Correctifs approuvés en bloc par Fabrizio (« go tous
+les lots »).
+
+| # | Lot correctif | Contenu | Statut |
+|---|-----|---------|--------|
+| A1 | Documentation | Fichier d'état réaligné (défauts, version du cache), README avec l'adresse du jeu. | Fait |
+| A2 | Confort de jeu | Tap sur une croix automatique ignoré ; zen exclu des records ; bouton « Voir la grille » ; chrono qui reprend au retour. | À faire |
+| A3 | Robustesse | État de partie extrait dans `src/engine/game.js` et testé ; génération dans un Web Worker ; service worker qui contourne le cache HTTP de Pages (10 min). | À faire |
+| A4 | Paysage | Disposition en deux colonnes quand l'écran est bas. | À faire |
+
 ## Prochaine action recommandée
-Fabrizio relance Alpage sur le Pixel, en ligne, deux fois (la première télécharge la nouvelle
-version, la seconde l'affiche) et signale ce qui gêne. Sinon, le projet est terminé.
+Claude enchaîne les lots A2 à A4 (déjà approuvés) : rien n'attend Fabrizio.
 
 ## Journal
 - 2026-09-26 : cadrage, règles transcrites, plan par lots. Thème, GitHub Pages et GPL-3.0 validés.
@@ -79,3 +89,5 @@ version, la seconde l'affiche) et signale ce qui gêne. Sinon, le projet est ter
   Lots 2-4 livrés : jeu jouable, sauvegarde locale, PWA hors ligne, GitHub Pages activé.
   Lot 6 : installé sur le Pixel, fonctionne en mode avion. Version 1 jouable.
   Lot 5 livré : réglages, zen, tutoriel, motifs, habillage ; service worker versionné (v2).
+  Réglages désactivés par défaut, migration des réglages enregistrés en v1 (cache v3).
+  Audit Fable : 9 constats, aucun bloquant ; lots A1 à A4 approuvés.
