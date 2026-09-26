@@ -90,6 +90,20 @@ les lots »).
 Aucune : version 7 validée sur le Pixel par Fabrizio (2026-09-26). Seul point ouvert
 facultatif : faire relire le romanche avant une diffusion plus large.
 
+## État au 2026-09-26, fin de session
+- **Version en ligne** : v7 (`CACHE = 'alpage-v7'`), https://fabrizio1305.github.io/alpage/,
+  validée sur le Pixel 8 Pro. Dépôt `Fabrizio1305/alpage` à jour, arbre de travail propre.
+- **Variables d'environnement** : aucune. Le jeu n'a ni secret, ni `.env.local`, ni service
+  distant ; rien à régénérer sur une autre machine.
+- **Tests** : `npm test`, 40 verts (moteur, partie, stockage, service worker, traductions).
+- **Reprendre sur une autre machine** : `git clone`, `npm test`, puis aperçu local via
+  `.claude/launch.json` (serveur Python sur le port 8765). Aucune dépendance à installer.
+- **Astuce de test navigateur** : effacer le stockage depuis une page qui n'exécute pas le jeu
+  (ex. `/README.md`). Depuis une page du jeu ouverte, la sauvegarde automatique à la fermeture
+  réécrit la partie juste après l'effacement et fausse le test suivant.
+- **Suite possible, non planifiée** : relecture du romanche par une personne de langue
+  romanche ; manifeste traduit (nom et description de l'app installée).
+
 ## Journal
 - 2026-09-26 : cadrage, règles transcrites, plan par lots. Thème, GitHub Pages et GPL-3.0 validés.
   Lot 1 livré : moteur + 16 tests verts. Dépôt public `Fabrizio1305/alpage` créé et poussé.
