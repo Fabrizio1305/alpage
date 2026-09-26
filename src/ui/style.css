@@ -138,7 +138,9 @@ main { position: relative; flex: 1; display: flex; flex-direction: column; justi
 
 /* ---------- Bas de page ---------- */
 .aide { color: var(--muted); font-size: 0.9rem; text-align: center; margin: 14px auto 0; max-width: 560px; }
-.stats { color: var(--muted); font-size: 0.85rem; text-align: center; margin: 0 16px 14px; }
+.stats { color: var(--muted); font-size: 0.85rem; text-align: center; margin: 0 16px 4px; }
+button.prive { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0 auto 12px; padding: 4px 10px; border: 0; background: none; color: var(--accent); font-size: 0.8rem; font-weight: 600; }
+button.prive svg { width: 16px; height: 16px; flex: none; }
 .actions { display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; padding: 8px 16px 12px; }
 button {
   font: inherit;
@@ -159,6 +161,8 @@ select { font: inherit; padding: 8px 10px; border-radius: 10px; border: 1px soli
 .voile { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); display: grid; place-items: center; padding: 24px; z-index: 10; }
 .voile[hidden] { display: none; }
 .carte {
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
   background: var(--carte);
   border-radius: 16px;
   padding: 22px 22px 18px;
@@ -172,7 +176,14 @@ select { font: inherit; padding: 8px 10px; border-radius: 10px; border: 1px soli
 .carte-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 
 .reglage { display: flex; gap: 12px; align-items: flex-start; text-align: left; padding: 10px 0; border-top: 1px solid var(--line-thin); cursor: pointer; }
-.reglage:last-of-type { border-bottom: 1px solid var(--line-thin); margin-bottom: 16px; }
+.reglage:last-of-type { border-bottom: 1px solid var(--line-thin); }
+.reglage-langue { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line-thin); margin-bottom: 14px; text-align: left; }
+.reglage-langue b { font-weight: 600; }
+.apropos { text-align: left; margin: 0 0 16px; padding: 12px 14px; border-radius: 12px; background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.apropos h3 { display: flex; gap: 8px; align-items: center; margin: 0 0 6px; font-size: 1rem; color: var(--accent); }
+.apropos h3 svg { width: 20px; height: 20px; flex: none; }
+.carte .apropos p { margin: 0 0 8px; font-size: 0.85rem; }
+.apropos a { color: var(--accent); font-size: 0.85rem; font-weight: 600; }
 .reglage input { width: 22px; height: 22px; margin: 2px 0 0; accent-color: var(--accent); flex: none; }
 .reglage b { display: block; font-weight: 600; }
 .reglage small { color: var(--muted); font-size: 0.85rem; }
@@ -196,14 +207,15 @@ select { font: inherit; padding: 8px 10px; border-radius: 10px; border: 1px soli
   body {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
-    grid-template-rows: auto 1fr auto auto;
-    grid-template-areas: "main haut" "main ." "main actions" "main stats";
+    grid-template-rows: auto 1fr auto auto auto;
+    grid-template-areas: "main haut" "main ." "main actions" "main stats" "main prive";
     column-gap: 8px;
   }
   .haut { grid-area: haut; padding-top: 12px; }
   main { grid-area: main; padding: 10px 0 10px 12px; }
   .actions { grid-area: actions; }
   .stats { grid-area: stats; }
+  button.prive { grid-area: prive; }
   .aide { display: none; }
   .plateau { width: min(100dvh - 26px, 100vw - 330px, 560px); }
 }

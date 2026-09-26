@@ -17,6 +17,8 @@ touchent, même en diagonale. Chaque puzzle n'a qu'une seule solution : tout se 
   marmotte, **mode zen** sans sifflets où les conflits sont surlignés, **motifs** sur les
   alpages pour les personnes daltoniennes.
 - Série quotidienne, parties réussies et records par taille restent dans le téléphone.
+- **Langues** : français, Deutsch, italiano, rumantsch et English, selon la langue du téléphone
+  ou au choix dans les réglages.
 
 ## Engagements
 - **Aucune donnée ne quitte le téléphone** : pas de compte, pas de serveur, pas d'analytics,

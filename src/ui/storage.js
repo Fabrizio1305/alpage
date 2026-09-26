@@ -61,7 +61,7 @@ export function enregistrerVictoire({ size, temps, cleJour, zen = false }) {
   return stats;
 }
 
-export const REGLAGES_DEFAUT = { autoCroix: false, zen: false, motifs: false, tutoVu: false, v: 2 };
+export const REGLAGES_DEFAUT = { autoCroix: false, zen: false, motifs: false, tutoVu: false, langue: 'auto', v: 2 };
 
 export function chargerReglages() {
   const stocke = lire(CLE_REGLAGES) ?? {};

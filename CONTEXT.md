@@ -79,10 +79,16 @@ les lots »).
 | A2 | Confort de jeu | Tap sur une croix automatique ignoré ; zen exclu des records (compte pour la série) ; bouton « Voir la grille » ; chrono qui reprend au retour et après rechargement. | Fait |
 | A3 | Robustesse | État de partie extrait dans `src/engine/game.js` et testé ; génération dans `src/ui/worker.js` (8 grilles 10×10 sans aucune tâche bloquante) ; service worker en `cache: 'reload'` contre le cache HTTP de Pages (`max-age=600`, vérifié). Fait avant A2 pour tester les règles. | Fait |
 | A4 | Paysage | Deux colonnes sous 520 px de haut : cases de 42 px au lieu de 22 px en 915×412. L'app installée reste verrouillée en portrait (manifeste). | Fait |
-| A5 | Langues et vie privée (demande de Fabrizio) | Interface en français, allemand, italien, romanche et anglais ; mention « sans pub, sans pistage » visible et encadré vie privée dans les réglages. | En cours |
+| A5 | Langues et vie privée (demande de Fabrizio) | Interface en français, allemand (usage suisse, sans « ß »), italien, romanche (rumantsch grischun) et anglais, dans `src/ui/i18n.js`. Langue du téléphone par défaut, anglais si inconnue, choix manuel dans les réglages. Bandeau « Sans pub · Sans pistage · Vos données restent sur ce téléphone » sous le jeu, qui ouvre l'encadré « Respectueux de votre vie privée » des réglages (avec lien vers le code source). 6 tests de cohérence des traductions. | Fait |
+
+## Points ouverts
+- **Romanche** : traduit par Claude, non relu par une personne de langue romanche. À faire
+  relire si le jeu est diffusé au-delà de Fabrizio (textes dans `src/ui/i18n.js`, clé `rm`).
+- Le manifeste (nom et description de l'app installée) reste en français.
 
 ## Prochaine action recommandée
-Claude termine le lot A5 (langues et mention vie privée) : rien n'attend Fabrizio.
+Fabrizio ouvre Alpage sur le Pixel, en ligne, deux fois de suite (la première télécharge la
+version v7, la seconde l'affiche), puis vérifie le bandeau vie privée et le choix de langue.
 
 ## Journal
 - 2026-09-26 : cadrage, règles transcrites, plan par lots. Thème, GitHub Pages et GPL-3.0 validés.
@@ -93,3 +99,4 @@ Claude termine le lot A5 (langues et mention vie privée) : rien n'attend Fabriz
   Réglages désactivés par défaut, migration des réglages enregistrés en v1 (cache v3).
   Audit Fable : 9 constats, aucun bloquant ; lots A1 à A4 approuvés puis livrés (cache v6).
   Demande A5 : traduction (langues suisses + anglais) et mention vie privée dans l'interface.
+  A5 livré (cache v7) : 5 langues, bandeau et encadré vie privée ; 40 tests verts.

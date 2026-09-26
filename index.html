@@ -25,6 +25,10 @@
       <ellipse cx="32" cy="29" rx="2.6" ry="1.8" fill="#1f1a14"/>
       <rect x="29.4" y="31" width="2.3" height="4.5" rx="0.7" fill="#fff"/><rect x="32.3" y="31" width="2.3" height="4.5" rx="0.7" fill="#fff"/>
     </symbol>
+    <symbol id="bouclier" viewBox="0 0 24 24">
+      <path d="M12 2 4 5v6c0 5.1 3.4 9.4 8 11 4.6-1.6 8-5.9 8-11V5l-8-3z" fill="currentColor"/>
+      <path d="m8.3 12.2 2.6 2.6 4.8-5.3" fill="none" stroke="var(--bg)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
     <symbol id="sifflet" viewBox="0 0 64 64">
       <rect x="26" y="20" width="34" height="14" rx="6" fill="currentColor"/>
       <circle cx="22" cy="38" r="16" fill="currentColor"/>
@@ -36,45 +40,52 @@
     <h1><svg class="logo"><use href="#marmotte"/></svg>Alpage</h1>
     <div class="sifflets" id="sifflets" role="status" aria-label="Sifflets restants"></div>
     <span class="badge" id="badge-zen" hidden>zen</span>
-    <div class="chrono" id="chrono" aria-label="Temps écoulé">00:00</div>
-    <button class="icone" id="btn-aide" type="button" aria-label="Comment jouer">?</button>
-    <button class="icone" id="btn-reglages" type="button" aria-label="Réglages">⚙</button>
+    <div class="chrono" id="chrono" data-i18n-aria="tempsEcoule">00:00</div>
+    <button class="icone" id="btn-aide" type="button" data-i18n-aria="titreAide">?</button>
+    <button class="icone" id="btn-reglages" type="button" data-i18n-aria="titreReglages">⚙</button>
   </header>
 
   <main>
-    <div id="plateau" class="plateau" role="grid" aria-label="Plateau de jeu"></div>
-    <div id="attente" class="attente" role="status" hidden>Les marmottes cherchent leur alpage…</div>
-    <p class="aide" id="aide">Une marmotte par alpage, par ligne et par colonne, jamais deux qui se touchent.</p>
+    <div id="plateau" class="plateau" role="grid" data-i18n-aria="plateau"></div>
+    <div id="attente" class="attente" role="status" hidden data-i18n="attente"></div>
+    <p class="aide" id="aide" data-i18n="aide"></p>
   </main>
 
-  <nav class="actions" aria-label="Parties">
-    <button id="btn-jour" type="button" class="principal">Puzzle du jour</button>
-    <label class="taille">Taille
-      <select id="taille" aria-label="Taille de la grille"></select>
+  <nav class="actions" data-i18n-aria="parties">
+    <button id="btn-jour" type="button" class="principal" data-i18n="puzzleDuJour"></button>
+    <label class="taille"><span data-i18n="taille"></span>
+      <select id="taille" data-i18n-aria="tailleGrille"></select>
     </label>
-    <button id="btn-libre" type="button">Nouvelle partie</button>
+    <button id="btn-libre" type="button" data-i18n="nouvellePartie"></button>
   </nav>
   <p class="stats" id="stats" aria-live="polite"></p>
+  <button class="prive" id="btn-prive" type="button"><svg aria-hidden="true"><use href="#bouclier"/></svg><span data-i18n="bandeau"></span></button>
 
   <div id="voile" class="voile" hidden>
     <div class="carte" role="dialog" aria-modal="true" aria-labelledby="voile-titre">
       <h2 id="voile-titre"></h2>
       <p id="voile-texte"></p>
       <div class="carte-actions">
-        <button id="btn-voir" type="button">Voir la grille</button>
-        <button id="btn-rejouer" type="button">Réessayer</button>
-        <button id="btn-nouveau" type="button" class="principal">Nouvelle partie</button>
+        <button id="btn-voir" type="button" data-i18n="voirGrille"></button>
+        <button id="btn-rejouer" type="button" data-i18n="reessayer"></button>
+        <button id="btn-nouveau" type="button" class="principal" data-i18n="nouvellePartie"></button>
       </div>
     </div>
   </div>
 
   <div id="reglages" class="voile" hidden>
     <div class="carte" role="dialog" aria-modal="true" aria-labelledby="reglages-titre">
-      <h2 id="reglages-titre">Réglages</h2>
-      <label class="reglage"><input type="checkbox" id="reg-autoCroix"><span><b>Croix automatiques</b><small>Poser une marmotte barre sa ligne, sa colonne, son alpage et ses voisines.</small></span></label>
-      <label class="reglage"><input type="checkbox" id="reg-zen"><span><b>Mode zen</b><small>Sans sifflets : les marmottes en conflit sont surlignées. Pour la prochaine partie.</small></span></label>
-      <label class="reglage"><input type="checkbox" id="reg-motifs"><span><b>Motifs sur les alpages</b><small>Distingue les alpages autrement que par la couleur.</small></span></label>
-      <div class="carte-actions"><button id="btn-reglages-fermer" type="button" class="principal">Fermer</button></div>
+      <h2 id="reglages-titre" data-i18n="titreReglages"></h2>
+      <label class="reglage"><input type="checkbox" id="reg-autoCroix"><span><b data-i18n="autoCroix"></b><small data-i18n="autoCroixDesc"></small></span></label>
+      <label class="reglage"><input type="checkbox" id="reg-zen"><span><b data-i18n="zen"></b><small data-i18n="zenDesc"></small></span></label>
+      <label class="reglage"><input type="checkbox" id="reg-motifs"><span><b data-i18n="motifs"></b><small data-i18n="motifsDesc"></small></span></label>
+      <label class="reglage-langue"><b data-i18n="langue"></b><select id="reg-langue"></select></label>
+      <section class="apropos" id="apropos">
+        <h3><svg aria-hidden="true"><use href="#bouclier"/></svg><span data-i18n="priveTitre"></span></h3>
+        <p data-i18n="priveTexte"></p>
+        <a href="https://github.com/Fabrizio1305/alpage" target="_blank" rel="noopener noreferrer" data-i18n="codeSource"></a>
+      </section>
+      <div class="carte-actions"><button id="btn-reglages-fermer" type="button" class="principal" data-i18n="fermer"></button></div>
     </div>
   </div>
 
@@ -91,8 +102,8 @@
           <use href="#marmotte" x="2.5" y="52.5" width="20" height="20"/>
           <use href="#marmotte" x="52.5" y="77.5" width="20" height="20"/>
         </svg>
-        <h2 id="tuto-titre">Une marmotte par alpage</h2>
-        <p>Chaque zone colorée est un alpage. Placez une marmotte dans chaque alpage, chaque ligne et chaque colonne.</p>
+        <h2 id="tuto-titre" data-i18n="tuto1Titre"></h2>
+        <p data-i18n="tuto1Texte"></p>
       </section>
       <section class="etape" hidden>
         <svg viewBox="0 0 220 100" class="illustration" aria-hidden="true">
@@ -105,8 +116,8 @@
           <use href="#marmotte" x="125" y="5" width="24" height="24"/><use href="#marmotte" x="191" y="71" width="24" height="24"/>
           <path d="M160 50l8 8 16-16" class="oui"/>
         </svg>
-        <h2>Chacune son territoire</h2>
-        <p>Deux marmottes ne se touchent jamais, même par un coin. Plus loin sur la diagonale, c'est permis.</p>
+        <h2 data-i18n="tuto2Titre"></h2>
+        <p data-i18n="tuto2Texte"></p>
       </section>
       <section class="etape" hidden>
         <svg viewBox="0 0 220 70" class="illustration" aria-hidden="true">
@@ -118,13 +129,13 @@
           <rect x="160" y="5" width="60" height="60" class="a3"/><rect x="161" y="6" width="58" height="58" class="gros"/>
           <use href="#marmotte" x="167" y="12" width="46" height="46"/>
         </svg>
-        <h2>Comment jouer</h2>
-        <p>Touchez une case : une croix (« pas ici »). Touchez encore : une marmotte. Une marmotte mal placée coûte un sifflet ; au troisième, les marmottes fuient. Tout se déduit, rien ne se devine.</p>
+        <h2 data-i18n="tuto3Titre"></h2>
+        <p data-i18n="tuto3Texte"></p>
       </section>
       <div class="points" id="tuto-points" aria-hidden="true"></div>
       <div class="carte-actions">
-        <button id="tuto-prec" type="button">Précédent</button>
-        <button id="tuto-suiv" type="button" class="principal">Suivant</button>
+        <button id="tuto-prec" type="button" data-i18n="precedent"></button>
+        <button id="tuto-suiv" type="button" class="principal"></button>
       </div>
     </div>
   </div>

@@ -6,7 +6,7 @@
 // RÈGLE : toute modification d'un fichier servi exige d'incrémenter CACHE ci-dessous,
 // sinon les téléphones gardent l'ancienne version.
 
-const CACHE = 'alpage-v6';
+const CACHE = 'alpage-v7';
 const FICHIERS = [
   './',
   './index.html',
@@ -14,6 +14,7 @@ const FICHIERS = [
   './src/ui/style.css',
   './src/ui/app.js',
   './src/ui/storage.js',
+  './src/ui/i18n.js',
   './src/ui/worker.js',
   './src/engine/index.js',
   './src/engine/rules.js',

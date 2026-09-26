@@ -9,6 +9,7 @@ import {
   chargerPartie, sauvegarderPartie, chargerStats, enregistrerVictoire, serieCourante,
   chargerReglages, sauvegarderReglages,
 } from './storage.js';
+import { t, choisirLangue, definirLangue, traduirePage, LANGUES, NOMS_LANGUES } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
 const plateau = $('plateau');
@@ -26,6 +27,7 @@ const ui = {
   minuteur: null,
   rendu: [],       // dernier état dessiné par case (évite de redessiner pour rien)
   demande: 0,      // numéro de la dernière demande de puzzle
+  textesVoile: null, // () => [titre, texte] de la fenêtre de fin, retraduisible
 };
 
 // ---------- Génération des puzzles, hors du fil principal ----------
@@ -86,7 +88,7 @@ async function lancer(demande) {
     const puzzle = await calculer(demande);
     if (n === ui.demande) nouvellePartie(puzzle, demande.type, demande.cle ?? null);
   } catch {
-    if (n === ui.demande) afficherVoile('Oups', 'Impossible de préparer ce puzzle. Réessayez.', false);
+    if (n === ui.demande) afficherVoile(() => [t('oups'), t('erreurPuzzle')], false);
   } finally {
     clearTimeout(minuterie);
     if (n === ui.demande) {
@@ -183,8 +185,8 @@ function rendreCase(i) {
     b.insertAdjacentHTML('beforeend', '<svg class="marmot"><use href="#marmotte"/></svg>');
   }
   if (etat !== MARMOT) b.classList.remove('pose');
-  const contenu = etat === CROSS ? 'croix' : etat === MARMOT ? 'marmotte' : 'vide';
-  b.setAttribute('aria-label', `Ligne ${Math.floor(i / size) + 1}, colonne ${i % size + 1}, alpage ${regions[i] + 1}, ${contenu}`);
+  const contenu = t(etat === CROSS ? 'contenuCroix' : etat === MARMOT ? 'contenuMarmotte' : 'contenuVide');
+  b.setAttribute('aria-label', t('caseLabel', Math.floor(i / size) + 1, i % size + 1, regions[i] + 1, contenu));
 }
 
 function rendreTout() {
@@ -230,22 +232,32 @@ function gagner() {
   enregistrerVictoire({ size: partie.puzzle.size, temps, cleJour: partie.cleJour, zen: partie.zen });
   rendreStats();
   sauvegarder();
-  const record = !partie.zen && (!avant || temps < avant) ? ' Nouveau record pour cette taille !' : '';
-  afficherVoile('Alpage en paix !', `Toutes les marmottes ont leur territoire en ${formaterTemps(temps)}.${record}`, false);
+  const record = !partie.zen && (!avant || temps < avant);
+  afficherVoile(() => [
+    t('victoireTitre'),
+    `${t('victoireTexte', formaterTemps(temps))}${record ? ` ${t('record')}` : ''}`,
+  ], false);
 }
 
 function perdre() {
   arreterChrono();
   plateau.classList.add('fini');
   sauvegarder();
-  afficherVoile('Les marmottes ont fui', 'Trois sifflets d’alerte : trop de dérangements. Réessayez ce puzzle ou lancez-en un autre.', true);
+  afficherVoile(() => [t('defaiteTitre'), t('defaiteTexte')], true);
 }
 
-function afficherVoile(titre, texte, rejouable) {
-  $('voile-titre').textContent = titre;
-  $('voile-texte').textContent = texte;
+function afficherVoile(textes, rejouable) {
+  ui.textesVoile = textes;
+  ecrireVoile();
   $('btn-rejouer').hidden = !rejouable;
   voile.hidden = false;
+}
+
+function ecrireVoile() {
+  if (!ui.textesVoile) return;
+  const [titre, texte] = ui.textesVoile();
+  $('voile-titre').textContent = titre;
+  $('voile-texte').textContent = texte;
 }
 
 // ---------- Sifflets, chrono, statistiques ----------
@@ -257,15 +269,15 @@ function rendreSifflets() {
   for (let k = 0; k < SIFFLETS_MAX; k++) {
     sifflets.insertAdjacentHTML('beforeend', `<svg class="${k < partie.sifflets ? '' : 'perdu'}"><use href="#sifflet"/></svg>`);
   }
-  sifflets.setAttribute('aria-label', `${partie.sifflets} sifflet${partie.sifflets > 1 ? 's' : ''} sur ${SIFFLETS_MAX}`);
+  sifflets.setAttribute('aria-label', t('siffletsLabel', partie.sifflets, SIFFLETS_MAX));
 }
 
 function rendreStats() {
   const s = chargerStats();
   const serie = serieCourante(s, dateKey());
-  const parts = [`Série : ${serie} jour${serie > 1 ? 's' : ''}`, `Réussis : ${s.reussis}`];
+  const parts = [t('serie', serie), t('reussis', s.reussis)];
   const meilleur = partie && s.meilleurs[partie.puzzle.size];
-  if (meilleur) parts.push(`Record ${partie.puzzle.size}×${partie.puzzle.size} : ${formaterTemps(meilleur)}`);
+  if (meilleur) parts.push(t('recordTaille', partie.puzzle.size, formaterTemps(meilleur)));
   stats.textContent = parts.join(' · ');
 }
 
@@ -326,11 +338,40 @@ function changerReglage(cle, valeur) {
   reglages = { ...reglages, [cle]: valeur };
   sauvegarderReglages(reglages);
   appliquerReglages();
+  if (cle === 'langue') appliquerLangue();
   if (cle === 'autoCroix' && partie && !partie.fini) {
     updateAutoCrosses(partie, valeur);
     rendreTout();
     sauvegarder();
   }
+}
+
+// ---------- Langue ----------
+
+function remplirChoixLangue() {
+  const choix = $('reg-langue');
+  choix.replaceChildren(...['auto', ...LANGUES].map((code) => {
+    const o = document.createElement('option');
+    o.value = code;
+    o.textContent = code === 'auto' ? t('langueAuto') : NOMS_LANGUES[code];
+    return o;
+  }));
+  choix.value = reglages.langue;
+}
+
+/** Applique la langue choisie (ou celle du téléphone) à toute l'interface. */
+function appliquerLangue() {
+  definirLangue(choisirLangue(reglages.langue, navigator.languages ?? [navigator.language]));
+  traduirePage();
+  remplirChoixLangue();
+  montrerEtape(etape);
+  if (partie) {
+    ui.rendu.fill('');
+    rendreTout();
+    rendreSifflets();
+  }
+  rendreStats();
+  ecrireVoile();
 }
 
 // ---------- Tutoriel ----------
@@ -347,7 +388,7 @@ function montrerEtape(k) {
     return s;
   }));
   $('tuto-prec').hidden = etape === 0;
-  $('tuto-suiv').textContent = etape === etapes.length - 1 ? 'Jouer' : 'Suivant';
+  $('tuto-suiv').textContent = t(etape === etapes.length - 1 ? 'jouer' : 'suivant');
 }
 
 function ouvrirTuto() {
@@ -380,13 +421,18 @@ $('btn-reglages-fermer').addEventListener('click', () => { $('reglages').hidden 
 for (const cle of ['autoCroix', 'zen', 'motifs']) {
   $(`reg-${cle}`).addEventListener('change', (e) => changerReglage(cle, e.target.checked));
 }
+$('reg-langue').addEventListener('change', (e) => changerReglage('langue', e.target.value));
+$('btn-prive').addEventListener('click', () => {
+  $('reglages').hidden = false;
+  $('apropos').scrollIntoView({ block: 'nearest' });
+});
 $('btn-aide').addEventListener('click', ouvrirTuto);
 $('tuto-prec').addEventListener('click', () => montrerEtape(etape - 1));
 $('tuto-suiv').addEventListener('click', () => (etape === etapes.length - 1 ? fermerTuto() : montrerEtape(etape + 1)));
 
 demarrerWorker();
 appliquerReglages();
-rendreStats();
+appliquerLangue();
 if (!reprendre()) partieDuJour();
 if (!reglages.tutoVu) ouvrirTuto();
 
