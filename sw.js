@@ -6,7 +6,7 @@
 // RÈGLE : toute modification d'un fichier servi exige d'incrémenter CACHE ci-dessous,
 // sinon les téléphones gardent l'ancienne version.
 
-const CACHE = 'alpage-v2';
+const CACHE = 'alpage-v3';
 const FICHIERS = [
   './',
   './index.html',

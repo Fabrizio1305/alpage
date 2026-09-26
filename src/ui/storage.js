@@ -60,10 +60,14 @@ export function enregistrerVictoire({ size, temps, cleJour }) {
   return stats;
 }
 
-export const REGLAGES_DEFAUT = { autoCroix: true, zen: false, motifs: false, tutoVu: false };
+export const REGLAGES_DEFAUT = { autoCroix: false, zen: false, motifs: false, tutoVu: false, v: 2 };
 
 export function chargerReglages() {
-  return { ...REGLAGES_DEFAUT, ...(lire(CLE_REGLAGES) ?? {}) };
+  const stocke = lire(CLE_REGLAGES) ?? {};
+  // Avant la v2, « croix automatiques » était actif par défaut et enregistré tel quel :
+  // on oublie cette valeur pour appliquer le nouveau défaut (désactivé).
+  if (!stocke.v) delete stocke.autoCroix;
+  return { ...REGLAGES_DEFAUT, ...stocke, v: 2 };
 }
 
 export const sauvegarderReglages = (reglages) => ecrire(CLE_REGLAGES, reglages);

@@ -48,7 +48,11 @@ test('partie en cours : aller-retour et stockage cassé toléré', () => {
 test('réglages : valeurs par défaut complétées, puis conservées', async () => {
   const { chargerReglages, sauvegarderReglages } = await import('../src/ui/storage.js');
   memoire.clear();
-  assert.deepEqual(chargerReglages(), { autoCroix: true, zen: false, motifs: false, tutoVu: false });
-  sauvegarderReglages({ zen: true });
-  assert.deepEqual(chargerReglages(), { autoCroix: true, zen: true, motifs: false, tutoVu: false });
+  assert.deepEqual(chargerReglages(), { autoCroix: false, zen: false, motifs: false, tutoVu: false, v: 2 });
+  sauvegarderReglages({ zen: true, v: 2 });
+  assert.deepEqual(chargerReglages(), { autoCroix: false, zen: true, motifs: false, tutoVu: false, v: 2 });
+  sauvegarderReglages({ autoCroix: true, v: 2 });
+  assert.equal(chargerReglages().autoCroix, true, 'choix explicite conservé');
+  sauvegarderReglages({ autoCroix: true, tutoVu: true }); // enregistré par la v1
+  assert.deepEqual(chargerReglages(), { autoCroix: false, zen: false, motifs: false, tutoVu: true, v: 2 }, 'migration v1 → défaut désactivé');
 });
