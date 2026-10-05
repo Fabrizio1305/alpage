@@ -115,12 +115,14 @@ Web Worker, l'écran affiche « Les marmottes cherchent leur alpage… ».
 ## Grandes grilles (demande de Fabrizio, 2026-10-05)
 | # | Lot | Contenu | Statut |
 |---|-----|---------|--------|
-| B2 | Jusqu'à 15×15 | `MAX_SIZE = 15` (partie libre ; le puzzle du jour reste de 6×6 à 9×9). 15 couleurs d'alpage distinctes en clair et en sombre, 15 motifs. Générateur accéléré (voir « Unicité prouvée par les déductions »). Cases de 25 px en 15×15 sur le Pixel en portrait : jouable mais serré. | Fait, à valider sur le Pixel |
+| B2 | Jusqu'à 15×15 | `MAX_SIZE = 15` (partie libre ; le puzzle du jour reste de 6×6 à 9×9). 15 couleurs d'alpage distinctes en clair et en sombre, 15 motifs. Générateur accéléré (voir « Unicité prouvée par les déductions »). Cases de 25 px en 15×15 sur le Pixel en portrait (27 px en 14×14) : jouable mais serré. Fabrizio a autorisé à s'arrêter à 14×14 si 15×15 n'est pas viable : gardé à 15, la génération tient (ci-dessous) ; repli = `MAX_SIZE = 14` dans `src/engine/rules.js` et cache incrémenté. | Fait, à valider sur le Pixel |
 
 Temps de génération sur le PC, 60 graines par taille et par niveau (moyenne / pire) :
 15×15 facile 307 / 1 198 ms, moyen 59 / 291 ms, difficile 65 / 355 ms, expert 229 /
 1 231 ms ; 12×12 expert 87 / 348 ms ; 10×10 expert 37 / 153 ms. Niveau visé atteint à
 chaque fois ; solution trouvée par déduction égale à la solution du générateur à chaque fois.
+Queue de distribution, 200 graines : 15×15 expert médiane 163 ms, 99 % sous 1 476 ms, pire
+1 942 ms ; 14×14 expert médiane 137 ms, 99 % sous 850 ms, pire 914 ms.
 
 ## Points ouverts
 - **Romanche** : traduit par Claude, non relu par une personne de langue romanche. À faire
@@ -128,8 +130,9 @@ chaque fois ; solution trouvée par déduction égale à la solution du généra
 - Le manifeste (nom et description de l'app installée) reste en français.
 
 ## Prochaine action recommandée
-Fabrizio : fusionner la PR des lots B1 et B2 (GitHub Pages publie alors la version 8), puis jouer
-quelques parties « Difficile » et « Expert » sur le Pixel et dire
+Fabrizio : sur le Pixel, ouvrir Alpage en ligne, le fermer complètement puis le rouvrir (au
+besoin deux fois) pour passer à la version 8 ; jouer quelques parties « Difficile » et
+« Expert » et dire
 si le niveau expert est assez dur, et si la progression du puzzle du jour dans la semaine
 convient, et si les cases du 15×15 sont assez grandes au doigt. Point ouvert facultatif : faire relire le romanche (nouveaux textes des niveaux
 compris) avant une diffusion plus large.
@@ -149,8 +152,9 @@ compris) avant une diffusion plus large.
   romanche ; manifeste traduit (nom et description de l'app installée).
 
 ## État au 2026-10-05
-- **Version** : v8 (`CACHE = 'alpage-v8'`) sur la branche `ccr-ecf87b06-n26sgu`, pas encore
-  fusionnée ni en ligne.
+- **Version** : v8 (`CACHE = 'alpage-v8'`), PR #1 (branche `ccr-ecf87b06-n26sgu`) fusionnée
+  dans `main` à la demande de Fabrizio (« pousse tout pour que je puisse tester sur mon
+  pixel ») ; GitHub Pages publie depuis `main`. Pas encore testée sur le Pixel.
 - **Tests** : `npm test`, 56 verts (dont 9 pour les niveaux dans `test/logic.test.js`, qui
   couvrent aussi 12×12 et 15×15, et `test/style.test.js` : une couleur et un motif par alpage).
 - **Vérifié dans Chromium (412×870 et paysage 870×412)** : sélecteur de niveau, ligne
@@ -158,6 +162,11 @@ compris) avant une diffusion plus large.
   « 9×9 expert », interface en allemand, aucune requête externe, aucune erreur console.
   Puis 15×15 expert en clair et en sombre : prêt en moins de 0,6 s, 15 couleurs distinctes,
   cases de 24,9 px.
+- **Mise à jour v7 → v8 simulée** (Chromium, profil persistant, v7 en cache puis v8 servie) :
+  1re ouverture en ligne = v8 téléchargée en arrière-plan, v7 encore affichée ; 2e ouverture
+  = v8 affichée, cache v7 supprimé ; puis v8 jouable serveur coupé. Piège de test : si les
+  fichiers v8 sont plus anciens que les v7 sur le disque, `python3 -m http.server` répond 304
+  à `sw.js` et la mise à jour ne part pas (artefact local, pas le cas sur GitHub Pages).
 
 ## Journal
 - 2026-09-26 : cadrage, règles transcrites, plan par lots. Thème, GitHub Pages et GPL-3.0 validés.
