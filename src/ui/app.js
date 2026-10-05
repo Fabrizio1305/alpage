@@ -12,6 +12,7 @@ import {
 import { t, choisirLangue, definirLangue, traduirePage, LANGUES, NOMS_LANGUES } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
+const NB_COULEURS = 15; // --r0 … --r14 et motifs .m0 … .m14 dans style.css : une par alpage
 const plateau = $('plateau');
 const sifflets = $('sifflets');
 const chrono = $('chrono');
@@ -161,8 +162,8 @@ function construirePlateau() {
     const row = Math.floor(i / size), col = i % size;
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = `case m${regions[i] % 10}`;
-    b.style.setProperty('--couleur', `var(--r${regions[i] % 10})`);
+    b.className = `case m${regions[i] % NB_COULEURS}`;
+    b.style.setProperty('--couleur', `var(--r${regions[i] % NB_COULEURS})`);
     if (row > 0 && regions[i - size] !== regions[i]) b.classList.add('bt');
     if (col > 0 && regions[i - 1] !== regions[i]) b.classList.add('bl');
     b.addEventListener('click', () => toucher(i));

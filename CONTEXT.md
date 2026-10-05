@@ -37,8 +37,14 @@ Un puzzle n'a qu'une seule solution : tout se déduit, rien ne se devine.
   incrémenter `CACHE` à chaque publication (règle dans `CLAUDE.md`, liste vérifiée par test).
 - **Générateur** : placement aléatoire valide → alpages qui poussent avec des appétits
   différents → réparation de l'unicité en déplaçant une case de chaque solution parasite vers
-  un alpage voisin (les cases qu'elle seule reliait la suivent : connexité préservée) →
-  retouches des frontières, une case à la fois, jusqu'au niveau demandé.
+  un alpage voisin (case au milieu de son alpage : le voisin s'étend jusqu'à elle par le plus
+  court chemin ; les cases détachées suivent, connexité préservée) → retouches des
+  frontières, une case à la fois, jusqu'au niveau demandé.
+- **Unicité prouvée par les déductions** : chaque déduction de `logic.js` vaut pour toute
+  solution, donc un puzzle qu'elles résolvent a une solution unique. La recherche exhaustive
+  (`solver.js`) ne sert plus qu'à trouver les solutions parasites, avec un nombre d'étapes
+  limité : 500 sur toute la grille, puis 20 000 parmi les cases que les déductions n'ont pas
+  exclues. Prouver l'unicité par recherche exhaustive prenait jusqu'à 112 s en 15×15.
 - **Niveaux** (`src/engine/logic.js`) : un solveur « à la main » essaie toujours la déduction
   la plus simple ; la plus dure dont il a eu besoin donne le niveau. Facile : dernière place
   possible. Moyen : enfermement simple (un alpage dans une ligne ou une colonne, et
@@ -106,16 +112,26 @@ pire ; expert 10×10 146 ms en moyenne, 720 ms au pire ; les autres niveaux rest
 250 ms au pire. Compter 2 à 3 fois plus sur le téléphone ; la génération tourne dans le
 Web Worker, l'écran affiche « Les marmottes cherchent leur alpage… ».
 
+## Grandes grilles (demande de Fabrizio, 2026-10-05)
+| # | Lot | Contenu | Statut |
+|---|-----|---------|--------|
+| B2 | Jusqu'à 15×15 | `MAX_SIZE = 15` (partie libre ; le puzzle du jour reste de 6×6 à 9×9). 15 couleurs d'alpage distinctes en clair et en sombre, 15 motifs. Générateur accéléré (voir « Unicité prouvée par les déductions »). Cases de 25 px en 15×15 sur le Pixel en portrait : jouable mais serré. | Fait, à valider sur le Pixel |
+
+Temps de génération sur le PC, 60 graines par taille et par niveau (moyenne / pire) :
+15×15 facile 307 / 1 198 ms, moyen 59 / 291 ms, difficile 65 / 355 ms, expert 229 /
+1 231 ms ; 12×12 expert 87 / 348 ms ; 10×10 expert 37 / 153 ms. Niveau visé atteint à
+chaque fois ; solution trouvée par déduction égale à la solution du générateur à chaque fois.
+
 ## Points ouverts
 - **Romanche** : traduit par Claude, non relu par une personne de langue romanche. À faire
   relire si le jeu est diffusé au-delà de Fabrizio (textes dans `src/ui/i18n.js`, clé `rm`).
 - Le manifeste (nom et description de l'app installée) reste en français.
 
 ## Prochaine action recommandée
-Fabrizio : fusionner la PR du lot B1 (GitHub Pages publie alors la version 8), puis jouer
+Fabrizio : fusionner la PR des lots B1 et B2 (GitHub Pages publie alors la version 8), puis jouer
 quelques parties « Difficile » et « Expert » sur le Pixel et dire
 si le niveau expert est assez dur, et si la progression du puzzle du jour dans la semaine
-convient. Point ouvert facultatif : faire relire le romanche (nouveaux textes des niveaux
+convient, et si les cases du 15×15 sont assez grandes au doigt. Point ouvert facultatif : faire relire le romanche (nouveaux textes des niveaux
 compris) avant une diffusion plus large.
 
 ## État au 2026-09-26, fin de session
@@ -135,10 +151,13 @@ compris) avant une diffusion plus large.
 ## État au 2026-10-05
 - **Version** : v8 (`CACHE = 'alpage-v8'`) sur la branche `ccr-ecf87b06-n26sgu`, pas encore
   fusionnée ni en ligne.
-- **Tests** : `npm test`, 50 verts (dont 9 pour les niveaux dans `test/logic.test.js`).
+- **Tests** : `npm test`, 56 verts (dont 9 pour les niveaux dans `test/logic.test.js`, qui
+  couvrent aussi 12×12 et 15×15, et `test/style.test.js` : une couleur et un motif par alpage).
 - **Vérifié dans Chromium (412×870 et paysage 870×412)** : sélecteur de niveau, ligne
   « Partie libre · 9 × 9 · Expert », choix conservés au rechargement, victoire → record
   « 9×9 expert », interface en allemand, aucune requête externe, aucune erreur console.
+  Puis 15×15 expert en clair et en sombre : prêt en moins de 0,6 s, 15 couleurs distinctes,
+  cases de 24,9 px.
 
 ## Journal
 - 2026-09-26 : cadrage, règles transcrites, plan par lots. Thème, GitHub Pages et GPL-3.0 validés.
@@ -154,3 +173,5 @@ compris) avant une diffusion plus large.
 - 2026-10-05 : demande « niveaux plus difficiles ». Mesure : la difficulté des puzzles n'était
   pas maîtrisée (surtout faciles et moyens). Lot B1 livré sur branche (cache v8) : 4 niveaux
   notés par un solveur par déduction, puzzle du jour gradué ; 50 tests verts.
+  Demande « grilles jusqu'à 15×15 » : lot B2 sur la même branche ; unicité prouvée par les
+  déductions (15×15 expert : de 44 s à 0,23 s en moyenne) ; 56 tests verts.

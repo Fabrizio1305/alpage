@@ -17,7 +17,7 @@ touchent, même en diagonale. Chaque puzzle n'a qu'une seule solution : tout se 
   une impasse (expert). Aucun niveau n'oblige à deviner.
 - **Puzzle du jour** identique pour tous, de plus en plus dur dans la semaine : 6×6 moyen le
   lundi, difficile du mardi au jeudi, expert du vendredi au dimanche (jusqu'à 9×9). Partie
-  libre de 5×5 à 10×10, au niveau choisi.
+  libre de 5×5 à 15×15, au niveau choisi.
 - Réglages (bouton ⚙), tous désactivés par défaut : **croix automatiques** autour de chaque
   marmotte, **mode zen** sans sifflets où les conflits sont surlignés, **motifs** sur les
   alpages pour les personnes daltoniennes.
