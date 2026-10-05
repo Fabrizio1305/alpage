@@ -70,7 +70,7 @@ test('puzzle à plusieurs solutions : pas résolu par déduction', () => {
 
 for (const niveau of NIVEAUX) {
   test(`générateur, niveau ${niveau} : niveau exact, unique, résolu sans deviner`, () => {
-    for (let size = 5; size <= 10; size++) {
+    for (const size of [5, 6, 7, 8, 9, 10, 12, 15]) {
       for (const seed of [11, 12]) {
         const p = generatePuzzle(size, seed, niveau);
         assert.equal(p.niveau, niveau, `taille ${size}, graine ${seed}`);

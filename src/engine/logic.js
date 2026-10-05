@@ -19,6 +19,28 @@ const RIEN = 0;
 const PROGRES = 1;
 const IMPASSE = -1;
 
+// Cases que voit chaque case par sa ligne, sa colonne et ses voisines, en bits (W mots de
+// 32 bits par case). Ne dépend que de la taille : calculé une fois par taille.
+const fixes = new Map();
+
+function voisinagesFixes(n) {
+  if (fixes.has(n)) return fixes.get(n);
+  const nn = n * n;
+  const W = Math.ceil(nn / 32);
+  const bits = new Uint32Array(nn * W);
+  for (let i = 0; i < nn; i++) {
+    const ri = Math.floor(i / n), ci = i % n;
+    for (let j = 0; j < nn; j++) {
+      const rj = Math.floor(j / n), cj = j % n;
+      if (i !== j && (ri === rj || ci === cj || (Math.abs(ri - rj) <= 1 && Math.abs(ci - cj) <= 1))) {
+        bits[i * W + (j >>> 5)] |= 1 << (j & 31);
+      }
+    }
+  }
+  fixes.set(n, bits);
+  return bits;
+}
+
 /** Prépare les tables d'un puzzle : unités (lignes, colonnes, alpages) et voisinages. */
 function preparer(puzzle) {
   const { size: n, regions } = puzzle;
@@ -33,19 +55,19 @@ function preparer(puzzle) {
     unites[2 * n + a].push(i);
     unitesDe.push([r, n + c, 2 * n + a]);
   }
-  // voit[i * nn + j] : une marmotte en i interdit la case j.
-  const voit = new Uint8Array(nn * nn);
+  // voitBits : cases qu'une marmotte en i interdit (sa ligne, sa colonne, son alpage, ses
+  // voisines), en bits, W mots de 32 bits par case.
+  const W = Math.ceil(nn / 32);
+  const alpageBits = new Uint32Array(n * W);
+  for (let i = 0; i < nn; i++) alpageBits[regions[i] * W + (i >>> 5)] |= 1 << (i & 31);
+  const fixe = voisinagesFixes(n);
+  const voitBits = new Uint32Array(nn * W);
   for (let i = 0; i < nn; i++) {
-    const ri = Math.floor(i / n), ci = i % n;
-    for (let j = 0; j < nn; j++) {
-      if (i === j) continue;
-      const rj = Math.floor(j / n), cj = j % n;
-      if (ri === rj || ci === cj || regions[i] === regions[j] || (Math.abs(ri - rj) <= 1 && Math.abs(ci - cj) <= 1)) {
-        voit[i * nn + j] = 1;
-      }
-    }
+    const a = regions[i] * W;
+    for (let w = 0; w < W; w++) voitBits[i * W + w] = fixe[i * W + w] | alpageBits[a + w];
+    voitBits[i * W + (i >>> 5)] &= ~(1 << (i & 31));
   }
-  return { n, nn, unites, unitesDe, voit };
+  return { n, nn, W, unites, unitesDe, voitBits };
 }
 
 function nouvelEtat(ctx) {
@@ -57,8 +79,10 @@ function copier(etat) {
 }
 
 function poser(ctx, etat, i) {
-  const { nn, voit } = ctx;
-  for (let j = 0; j < nn; j++) if (voit[i * nn + j]) etat.possible[j] = 0;
+  const { W, voitBits } = ctx;
+  for (let w = 0; w < W; w++) {
+    for (let m = voitBits[i * W + w]; m; m &= m - 1) etat.possible[w * 32 + 31 - Math.clz32(m & -m)] = 0;
+  }
   etat.possible[i] = 0;
   for (const u of ctx.unitesDe[i]) etat.faite[u] = 1;
   etat.marmottes.push(i);
@@ -150,16 +174,29 @@ function groupeEnferme(ctx, etat, ouvertes, k, ta, tb) {
   return parcourir(0, 0);
 }
 
-/** 2. Case qui, occupée, ne laisserait aucune place à une ligne, une colonne ou un alpage. */
+/**
+ * 2. Case qui, occupée, ne laisserait aucune place à une ligne, une colonne ou un alpage :
+ * les cases qui voient toutes les cases possibles de l'unité sont exclues.
+ */
 function caseQuiBarre(ctx, etat) {
-  const { nn, voit } = ctx;
+  const { W, voitBits } = ctx;
+  const commun = new Uint32Array(W);
   for (let u = 0; u < 3 * ctx.n; u++) {
     if (etat.faite[u]) continue;
-    const cs = candidats(ctx, etat, u);
+    commun.fill(0xffffffff);
+    let vide = true;
+    for (const i of ctx.unites[u]) {
+      if (!etat.possible[i]) continue;
+      vide = false;
+      for (let w = 0; w < W; w++) commun[w] &= voitBits[i * W + w];
+    }
+    if (vide) return IMPASSE;
     let exclu = false;
-    for (let x = 0; x < nn; x++) {
-      if (!etat.possible[x] || cs.includes(x)) continue;
-      if (cs.every((c) => voit[x * nn + c])) { etat.possible[x] = 0; exclu = true; }
+    for (let w = 0; w < W; w++) {
+      for (let m = commun[w]; m; m &= m - 1) {
+        const x = w * 32 + 31 - Math.clz32(m & -m);
+        if (etat.possible[x]) { etat.possible[x] = 0; exclu = true; }
+      }
     }
     if (exclu) return PROGRES;
   }
@@ -209,26 +246,34 @@ function hypothese(ctx, etat) {
 }
 
 /**
- * Résout le puzzle par déductions. Renvoie { resolu, niveau, etapes, solution } :
+ * Résout le puzzle par déductions. Renvoie { resolu, niveau, etapes, solution, restantes } :
  *   - resolu : toutes les marmottes trouvées sans deviner ;
  *   - niveau : déduction la plus difficile utilisée (1 à 4), 0 si non résolu ;
  *   - etapes : nombre de déductions de chaque niveau (index 1 à 4) ;
- *   - solution : colonne de la marmotte de chaque ligne (-1 si pas trouvée).
+ *   - solution : colonne de la marmotte de chaque ligne (-1 si pas trouvée) ;
+ *   - restantes : 1 pour chaque case qui peut encore porter une marmotte (posée ou possible).
+ * Chaque déduction vaut pour toute solution : un puzzle résolu a donc une solution unique,
+ * et toute solution d'un puzzle non résolu se trouve parmi les cases restantes.
+ * `niveauMax` limite les déductions permises (4 : toutes).
  */
-export function resoudreParDeduction(puzzle) {
+export function resoudreParDeduction(puzzle, niveauMax = 4) {
   const ctx = preparer(puzzle);
   const etat = nouvelEtat(ctx);
   const etapes = [0, 0, 0, 0, 0];
   let niveau = 0;
   while (etat.marmottes.length < ctx.n) {
-    const [r, nv] = etape(ctx, etat, 4);
+    const [r, nv] = etape(ctx, etat, niveauMax);
     if (r !== PROGRES) { niveau = 0; break; }
     etapes[nv]++;
     niveau = Math.max(niveau, nv);
   }
   const solution = new Array(ctx.n).fill(-1);
-  for (const i of etat.marmottes) solution[Math.floor(i / ctx.n)] = i % ctx.n;
-  return { resolu: niveau > 0, niveau, etapes, solution };
+  const restantes = etat.possible;
+  for (const i of etat.marmottes) {
+    solution[Math.floor(i / ctx.n)] = i % ctx.n;
+    restantes[i] = 1;
+  }
+  return { resolu: niveau > 0, niveau, etapes, solution, restantes };
 }
 
 /** Niveau ('facile' … 'expert') d'un puzzle, ou null s'il faut deviner. */

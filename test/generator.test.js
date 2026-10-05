@@ -50,7 +50,7 @@ test('même graine → même puzzle ; graines différentes → puzzles différen
 
 test('taille hors bornes refusée', () => {
   assert.throws(() => generatePuzzle(4, 1), RangeError);
-  assert.throws(() => generatePuzzle(11, 1), RangeError);
+  assert.throws(() => generatePuzzle(16, 1), RangeError);
 });
 
 test('puzzle du jour : clé de date, graine stable, taille selon le jour', () => {

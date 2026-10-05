@@ -14,6 +14,7 @@
   --montagnes: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 200' preserveAspectRatio='none'%3E%3Cpath d='M0 200V120L90 60l70 40 80-70 90 60 70-50 90 70 80-60 70 45 80-30 80 55v80z' fill='%23c9d6c0'/%3E%3Cpath d='M0 200v-50l110-40 90 35 80-45 100 50 90-30 100 45 80-25 80 30 70-15v45z' fill='%23a9bfa0'/%3E%3C/svg%3E");
   --r0: #f9c6c9; --r1: #fde5a7; --r2: #c7e9b0; --r3: #a9d6f5; --r4: #d9c3f2;
   --r5: #ffd6a5; --r6: #b8e0d2; --r7: #f5b8e0; --r8: #d9d9a6; --r9: #c2c9f0;
+  --r10: #9fe3e8; --r11: #f7a58f; --r12: #d6d6d0; --r13: #d9ef8a; --r14: #e3a9ee;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -32,6 +33,7 @@
     --montagnes: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 200' preserveAspectRatio='none'%3E%3Cpath d='M0 200V120L90 60l70 40 80-70 90 60 70-50 90 70 80-60 70 45 80-30 80 55v80z' fill='%231c2622'/%3E%3Cpath d='M0 200v-50l110-40 90 35 80-45 100 50 90-30 100 45 80-25 80 30 70-15v45z' fill='%23233029'/%3E%3C/svg%3E");
     --r0: #7a3b40; --r1: #7a6420; --r2: #3f6b32; --r3: #2e5a7a; --r4: #5a4280;
     --r5: #7a5230; --r6: #2f6b5a; --r7: #7a3b66; --r8: #626238; --r9: #414a80;
+    --r10: #1f7380; --r11: #933c22; --r12: #56595b; --r13: #6c8024; --r14: #7d3f93;
   }
 }
 
@@ -137,6 +139,11 @@ main { position: relative; flex: 1; display: flex; flex-direction: column; justi
 .motifs .case.m7 { background-image: repeating-linear-gradient(45deg, var(--encre) 0 1.5px, transparent 1.5px 9px), repeating-linear-gradient(-45deg, var(--encre) 0 1.5px, transparent 1.5px 9px); }
 .motifs .case.m8 { background-image: radial-gradient(var(--encre) 2.5px, transparent 2.8px); background-size: 13px 13px; background-position: 3px 3px; }
 .motifs .case.m9 { background-image: repeating-linear-gradient(45deg, var(--encre) 0 4px, transparent 4px 12px); }
+.motifs .case.m10 { background-image: repeating-linear-gradient(60deg, var(--encre) 0 2px, transparent 2px 9px); }
+.motifs .case.m11 { background-image: repeating-linear-gradient(-60deg, var(--encre) 0 2px, transparent 2px 9px); }
+.motifs .case.m12 { background-image: radial-gradient(circle, transparent 2px, var(--encre) 2.4px 3.4px, transparent 3.8px); background-size: 11px 11px; }
+.motifs .case.m13 { background-image: repeating-linear-gradient(0deg, var(--encre) 0 4px, transparent 4px 12px); }
+.motifs .case.m14 { background-image: repeating-linear-gradient(90deg, var(--encre) 0 4px, transparent 4px 12px); }
 
 /* ---------- Bas de page ---------- */
 .aide { color: var(--muted); font-size: 0.9rem; text-align: center; margin: 14px auto 0; max-width: 560px; }

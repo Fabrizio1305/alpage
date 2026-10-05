@@ -4,15 +4,16 @@
 // 2. Faire pousser un alpage autour de chaque marmotte, avec des appétits différents, jusqu'à
 //    couvrir la grille. Appétits très inégaux : petits alpages, déductions faciles ; appétits
 //    proches (difficile, expert) : alpages de tailles voisines, plus durs à démêler.
-// 3. Tant qu'il existe une solution parasite, déplacer une case de cette solution vers un
-//    alpage voisin (les alpages restent d'un seul tenant) : la parasite meurt, la vraie
-//    solution survit.
+// 3. Tant que les déductions de logic.js ne résolvent pas le puzzle (ce qui prouverait son
+//    unicité), déplacer vers un alpage voisin une case d'une solution parasite (la parasite
+//    meurt, la vraie solution survit) ou, à défaut, une case que les déductions n'ont pas su
+//    exclure. Les alpages restent d'un seul tenant.
 // 4. Si un niveau est demandé, retoucher les frontières une case à la fois jusqu'à ce que
 //    la résolution à la main (logic.js) demande exactement ce niveau, en gardant l'unicité.
 // Tout l'aléatoire vient de la graine : même graine → même puzzle, sur tout appareil.
 
 import { createRng } from './random.js';
-import { findSolutions } from './solver.js';
+import { exploreSolutions } from './solver.js';
 import { resoudreParDeduction, NIVEAUX } from './logic.js';
 import { MIN_SIZE, MAX_SIZE } from './rules.js';
 
@@ -20,6 +21,12 @@ const MAX_RESTARTS = 200;
 const MAX_REPAIRS = 400;
 const MAX_RETOUCHES = 600;
 const MAX_AJUSTEMENTS = 40;
+// Étapes de recherche exhaustive au plus : un coup d'œil sur toute la grille (les parasites
+// d'une grille encore très ambiguë sortent tout de suite), puis une recherche plus longue
+// limitée aux cases que les déductions n'ont pas exclues. Jamais de preuve d'unicité par
+// recherche sur toute la grille : elle s'enlise sur les grandes grilles.
+const BUDGET_LARGE = 500;
+const BUDGET_ETROIT = 20000;
 
 /** Placement aléatoire valide : solution[row] = colonne. */
 function randomPlacement(size, rng) {
@@ -63,8 +70,11 @@ function growRegions(size, placement, rng, appetit) {
     const frontiers = Array.from({ length: size }, () => []);
     for (let i = 0; i < regions.length; i++) {
       if (regions[i] !== -1) continue;
-      const owners = new Set(neighbours(size, i).map((n) => regions[n]).filter((r) => r !== -1));
-      for (const r of owners) frontiers[r].push(i);
+      const owners = [];
+      for (const n of neighbours(size, i)) {
+        const r = regions[n];
+        if (r !== -1 && !owners.includes(r)) { owners.push(r); frontiers[r].push(i); }
+      }
     }
     // Tirage d'un alpage pondéré par son appétit, parmi ceux qui peuvent encore grandir.
     let total = 0;
@@ -120,43 +130,88 @@ function cutOff(size, regions, reg, removed, anchor) {
 }
 
 /**
- * Élimine les solutions parasites en déplaçant des cases entre alpages voisins.
- * Une case déplacée emmène avec elle les cases qu'elle seule reliait à leur marmotte : tous
- * les alpages restent d'un seul tenant. L'alpage n° r est celui de la marmotte de la ligne r.
- * Renvoie true si le puzzle est devenu unique.
+ * Vérifie un puzzle. Renvoie :
+ *   - { deduction } : les déductions le résolvent (résultat de resoudreParDeduction). Cela
+ *     prouve l'unicité, puisque chaque déduction vaut pour toute solution ;
+ *   - { parasite } : une autre solution que la vraie ;
+ *   - { restantes } : ni l'un ni l'autre (unique mais il faudrait deviner, ou recherche trop
+ *     longue) ; cases que les déductions n'ont pas su exclure.
  */
-function repairUniqueness(puzzle, rng) {
-  const { size, regions, solution } = puzzle;
-  for (let iter = 0; iter < MAX_REPAIRS; iter++) {
-    const sols = findSolutions(puzzle, 2);
-    if (sols.length === 1) return true;
-    if (sols.length === 0) return false;
-    const other = sols[0].every((c, r) => c === solution[r]) ? sols[1] : sols[0];
-    // Lignes où la parasite diffère de la vraie solution, dans un ordre aléatoire.
-    const rows = rng.shuffle([...Array(size).keys()].filter((r) => other[r] !== solution[r]));
-    let moved = false;
-    for (const row of rows) {
-      const cell = row * size + other[row];
-      const from = regions[cell];
-      const targets = rng.shuffle([...new Set(neighbours(size, cell).map((n) => regions[n]).filter((r) => r !== from))]);
-      if (!targets.length) continue;
-      for (const i of cutOff(size, regions, from, cell, from * size + solution[from])) regions[i] = targets[0];
-      regions[cell] = targets[0];
-      moved = true;
-      break;
-    }
-    if (!moved) return false;
-  }
-  return false;
+function verifier(puzzle) {
+  const vraie = (s) => s.every((c, r) => c === puzzle.solution[r]);
+  const parasite = (sols) => ({ parasite: vraie(sols[0]) ? sols[1] : sols[0] });
+  const large = exploreSolutions(puzzle, 2, BUDGET_LARGE);
+  if (large.solutions.length === 2) return parasite(large.solutions);
+  // Déductions sans hypothèse (rapides) : si elles bloquent, la parasite éventuelle se cache
+  // parmi les cases qu'elles n'ont pas exclues, ce qui réduit beaucoup la recherche.
+  const simple = resoudreParDeduction(puzzle, 3);
+  if (simple.resolu) return { deduction: simple };
+  const etroite = exploreSolutions(puzzle, 2, BUDGET_ETROIT, simple.restantes);
+  if (etroite.solutions.length === 2) return parasite(etroite.solutions);
+  if (!etroite.complet && !large.complet) return { restantes: simple.restantes };
+  // Solution unique : l'hypothèse courte suffit-elle à la trouver sans deviner ?
+  const complete = resoudreParDeduction(puzzle);
+  return complete.resolu ? { deduction: complete } : { restantes: complete.restantes };
 }
 
 /**
- * Note d'un puzzle par rapport au niveau visé : `ecart` (0 = bon niveau) d'abord, puis
- * `score`, qui grandit quand le puzzle se rapproche du niveau visé sans encore l'atteindre.
+ * Fait passer la case `cell` (sans marmotte) dans un alpage voisin. Si elle est au milieu de
+ * son alpage, l'alpage voisin s'étend jusqu'à elle par le plus court chemin. Chaque case
+ * déplacée emmène celles qu'elle seule reliait à leur marmotte : tous les alpages restent
+ * d'un seul tenant. L'alpage n° r est celui de la marmotte de la ligne r. Renvoie false si
+ * aucun chemin n'évite la marmotte.
  */
-function noter(puzzle, cible) {
-  const { resolu, niveau, etapes } = resoudreParDeduction(puzzle);
-  if (!resolu) return { niveau: 0, ecart: Infinity, score: 0 };
+function deplacer(puzzle, cell, rng) {
+  const { size, regions, solution } = puzzle;
+  const from = regions[cell];
+  const ancre = from * size + solution[from];
+  // Plus court chemin dans l'alpage, de `cell` à une case qui touche un autre alpage.
+  const prev = new Map([[cell, -1]]);
+  const file = [cell];
+  let bord = -1;
+  for (let k = 0; k < file.length && bord === -1; k++) {
+    const i = file[k];
+    if (neighbours(size, i).some((n) => regions[n] !== from)) bord = i;
+    for (const n of neighbours(size, i)) {
+      if (regions[n] === from && n !== ancre && !prev.has(n)) { prev.set(n, i); file.push(n); }
+    }
+  }
+  if (bord === -1) return false;
+  const targets = [...new Set(neighbours(size, bord).map((n) => regions[n]).filter((r) => r !== from))];
+  const to = targets[rng.int(targets.length)];
+  // Du bord jusqu'à `cell` : chaque case touche la précédente, l'alpage `to` reste d'un tenant.
+  for (let i = bord; i !== -1; i = prev.get(i)) {
+    if (regions[i] !== from) continue; // déjà emmenée avec une case détachée
+    for (const j of cutOff(size, regions, from, i, ancre)) regions[j] = to;
+    regions[i] = to;
+  }
+  return true;
+}
+
+/**
+ * Rend le puzzle unique et résoluble par déduction en déplaçant des cases entre alpages
+ * voisins : une case de chaque solution parasite (la parasite meurt, la vraie solution
+ * survit) ou, si les déductions bloquent sans parasite trouvée, une des cases qu'elles n'ont
+ * pas su exclure. Renvoie le résultat des déductions, ou null en cas d'échec.
+ */
+function repairUniqueness(puzzle, rng) {
+  const { size, solution } = puzzle;
+  for (let iter = 0; iter < MAX_REPAIRS; iter++) {
+    const verif = verifier(puzzle);
+    if (verif.deduction) return verif.deduction;
+    const cases = verif.parasite
+      ? verif.parasite.map((col, row) => row * size + col).filter((i) => solution[Math.floor(i / size)] !== i % size)
+      : [...verif.restantes.keys()].filter((i) => verif.restantes[i] && solution[Math.floor(i / size)] !== i % size);
+    if (!rng.shuffle(cases).some((cell) => deplacer(puzzle, cell, rng))) return null;
+  }
+  return null;
+}
+
+/**
+ * Note d'un puzzle résolu par déduction, par rapport au niveau visé : `ecart` (0 = bon niveau)
+ * d'abord, puis `score`, qui grandit quand le puzzle se rapproche du niveau visé.
+ */
+function noter({ niveau, etapes }, cible) {
   const poids = etapes[2] + 4 * etapes[3] + 16 * etapes[4];
   return { niveau, ecart: Math.abs(niveau - cible), score: niveau < cible ? poids : -poids };
 }
@@ -166,10 +221,10 @@ function noter(puzzle, cible) {
  * sans marmotte passe dans un alpage voisin ; on garde la retouche si le puzzle reste
  * unique et ne s'éloigne pas du niveau visé. Renvoie la note finale (ecart 0 : atteint).
  */
-function ajuster(puzzle, cible, rng) {
+function ajuster(puzzle, deduction, cible, rng) {
   const { size, regions, solution } = puzzle;
   const marmotte = new Set(solution.map((col, row) => row * size + col));
-  let note = noter(puzzle, cible);
+  let note = noter(deduction, cible);
   for (let iter = 0; iter < MAX_RETOUCHES && note.ecart > 0; iter++) {
     const cell = rng.int(size * size);
     if (marmotte.has(cell)) continue;
@@ -177,7 +232,8 @@ function ajuster(puzzle, cible, rng) {
     const targets = [...new Set(neighbours(size, cell).map((n) => regions[n]).filter((r) => r !== from))];
     if (!targets.length || !staysConnected(size, regions, from, cell)) continue;
     regions[cell] = targets[rng.int(targets.length)];
-    const essai = findSolutions(puzzle, 2).length === 1 ? noter(puzzle, cible) : null;
+    const verif = verifier(puzzle);
+    const essai = verif.deduction ? noter(verif.deduction, cible) : null;
     if (essai && (essai.ecart < note.ecart || (essai.ecart === note.ecart && essai.score >= note.score))) {
       note = essai;
     } else {
@@ -214,14 +270,11 @@ export function generatePuzzle(size, seed, niveau = null) {
     const solution = randomPlacement(size, rng);
     const regions = growRegions(size, solution, rng, appetit);
     const puzzle = { size, regions, solution, seed };
-    if (!repairUniqueness(puzzle, rng)) continue;
-    if (cible === 0) {
-      const { resolu, niveau: n } = resoudreParDeduction(puzzle);
-      if (resolu) return { ...puzzle, niveau: NIVEAUX[n - 1] };
-      continue;
-    }
+    const deduction = repairUniqueness(puzzle, rng);
+    if (!deduction) continue;
+    if (cible === 0) return { ...puzzle, niveau: NIVEAUX[deduction.niveau - 1] };
     ajustements++;
-    const note = ajuster(puzzle, cible, rng);
+    const note = ajuster(puzzle, deduction, cible, rng);
     if (note.ecart === 0) return { ...puzzle, niveau };
     if (note.ecart < (meilleur?.note.ecart ?? Infinity)) meilleur = { puzzle, note };
   }

@@ -7,7 +7,7 @@
 // Un état de jeu : tableau de N×N valeurs parmi EMPTY, CROSS, MARMOT.
 
 export const MIN_SIZE = 5;
-export const MAX_SIZE = 10;
+export const MAX_SIZE = 15;
 
 export const EMPTY = 0;
 export const CROSS = 1;
