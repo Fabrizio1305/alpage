@@ -65,6 +65,8 @@ body {
 .chrono { font-variant-numeric: tabular-nums; font-size: 1.05rem; min-width: 3.2em; text-align: right; }
 button.icone { width: 34px; height: 34px; padding: 0; border-radius: 50%; font-size: 1.05rem; line-height: 1; display: grid; place-items: center; }
 
+.info { margin: 0; padding: 0 12px; text-align: center; color: var(--muted); font-size: 0.85rem; font-weight: 600; min-height: 1.2em; }
+
 main { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 8px 16px; }
 .attente { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; font-weight: 600; text-shadow: 0 1px 2px var(--bg); }
 .attente[hidden] { display: none; }
@@ -75,7 +77,7 @@ main { position: relative; flex: 1; display: flex; flex-direction: column; justi
   display: grid;
   grid-template-columns: repeat(var(--n), minmax(0, 1fr));
   grid-template-rows: repeat(var(--n), minmax(0, 1fr));
-  width: min(100vw - 32px, 100dvh - 250px, 560px);
+  width: min(100vw - 32px, 100dvh - 270px, 560px);
   aspect-ratio: 1;
   margin: 0 auto;
   border: 3px solid var(--line);
@@ -207,11 +209,12 @@ select { font: inherit; padding: 8px 10px; border-radius: 10px; border: 1px soli
   body {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
-    grid-template-rows: auto 1fr auto auto auto;
-    grid-template-areas: "main haut" "main ." "main actions" "main stats" "main prive";
+    grid-template-rows: auto auto 1fr auto auto auto;
+    grid-template-areas: "main haut" "main info" "main ." "main actions" "main stats" "main prive";
     column-gap: 8px;
   }
   .haut { grid-area: haut; padding-top: 12px; }
+  .info { grid-area: info; }
   main { grid-area: main; padding: 10px 0 10px 12px; }
   .actions { grid-area: actions; }
   .stats { grid-area: stats; }

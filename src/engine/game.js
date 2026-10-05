@@ -1,7 +1,8 @@
 // État d'une partie, sans interface : effet de chaque geste, croix automatiques, fin de partie.
 // L'interface (src/ui/app.js) appelle ces fonctions puis se contente de dessiner l'état.
 
-import { EMPTY, CROSS, MARMOT, isSolved, findConflicts, cellsCoveredBy } from './rules.js';
+import { EMPTY, CROSS, MARMOT, MIN_SIZE, MAX_SIZE, isSolved, findConflicts, cellsCoveredBy } from './rules.js';
+import { NIVEAUX, niveauDe } from './logic.js';
 
 export const SIFFLETS_MAX = 3;
 
@@ -95,10 +96,14 @@ export function saveableGame(game) {
 /** Recrée une partie depuis une sauvegarde ; null si elle est incomplète ou abîmée. */
 export function restoreGame(saved, { autoCroix = false } = {}) {
   if (!saved || typeof saved !== 'object') return null;
-  const { puzzle } = saved;
+  let { puzzle } = saved;
   if (!puzzle || !Number.isInteger(puzzle.size) || !Array.isArray(puzzle.regions) || !Array.isArray(puzzle.solution)) return null;
+  if (puzzle.size < MIN_SIZE || puzzle.size > MAX_SIZE) return null;
   const n = puzzle.size * puzzle.size;
   if (puzzle.regions.length !== n || puzzle.solution.length !== puzzle.size) return null;
+  if (!puzzle.regions.every((r) => Number.isInteger(r) && r >= 0 && r < puzzle.size)) return null;
+  // Sauvegardes d'avant les niveaux : le niveau se recalcule.
+  if (!NIVEAUX.includes(puzzle.niveau)) puzzle = { ...puzzle, niveau: niveauDe(puzzle) };
   const { cells } = saved;
   if (!Array.isArray(cells) || cells.length !== n || !cells.every((c) => c === EMPTY || c === CROSS || c === MARMOT)) return null;
 
