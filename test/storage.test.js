@@ -60,11 +60,30 @@ test('partie en cours : aller-retour et stockage cassé toléré', () => {
 test('réglages : valeurs par défaut complétées, puis conservées', async () => {
   const { chargerReglages, sauvegarderReglages } = await import('../src/ui/storage.js');
   memoire.clear();
-  assert.deepEqual(chargerReglages(), { autoCroix: false, zen: false, motifs: false, tutoVu: false, langue: 'auto', v: 2 });
+  const defaut = { autoCroix: false, zen: false, motifs: false, tutoVu: false, langue: 'auto', taille: 7, niveau: 'moyen', v: 2 };
+  assert.deepEqual(chargerReglages(), defaut);
   sauvegarderReglages({ zen: true, v: 2 });
-  assert.deepEqual(chargerReglages(), { autoCroix: false, zen: true, motifs: false, tutoVu: false, langue: 'auto', v: 2 });
+  assert.deepEqual(chargerReglages(), { ...defaut, zen: true });
   sauvegarderReglages({ autoCroix: true, v: 2 });
   assert.equal(chargerReglages().autoCroix, true, 'choix explicite conservé');
   sauvegarderReglages({ autoCroix: true, tutoVu: true }); // enregistré par la v1
-  assert.deepEqual(chargerReglages(), { autoCroix: false, zen: false, motifs: false, tutoVu: true, langue: 'auto', v: 2 }, 'migration v1 → défaut désactivé');
+  assert.deepEqual(chargerReglages(), { ...defaut, tutoVu: true }, 'migration v1 → défaut désactivé');
+  sauvegarderReglages({ taille: 9, niveau: 'expert', v: 2 });
+  assert.equal(chargerReglages().taille, 9);
+  assert.equal(chargerReglages().niveau, 'expert');
+  sauvegarderReglages({ taille: 42, niveau: 'impossible', v: 2 });
+  assert.equal(chargerReglages().taille, 7, 'taille inconnue → défaut');
+  assert.equal(chargerReglages().niveau, 'moyen', 'niveau inconnu → défaut');
+});
+
+test('records : un par taille et par niveau', async () => {
+  const { cleRecord } = await import('../src/ui/storage.js');
+  memoire.clear();
+  enregistrerVictoire({ size: 8, niveau: 'facile', temps: 60000, cleJour: null });
+  enregistrerVictoire({ size: 8, niveau: 'expert', temps: 300000, cleJour: null });
+  enregistrerVictoire({ size: 8, niveau: 'expert', temps: 400000, cleJour: null });
+  const s = chargerStats();
+  assert.equal(s.meilleurs[cleRecord(8, 'facile')], 60000);
+  assert.equal(s.meilleurs[cleRecord(8, 'expert')], 300000, 'un expert lent ne bat pas un facile rapide, ni l\'inverse');
+  assert.equal(cleRecord(8, null), '8', 'puzzle sans niveau : la taille seule');
 });

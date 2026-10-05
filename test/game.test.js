@@ -4,6 +4,7 @@ import { EMPTY, CROSS, MARMOT, cellsCoveredBy } from '../src/engine/rules.js';
 import { createGame, tap, updateAutoCrosses, conflicts, saveableGame, restoreGame, SIFFLETS_MAX } from '../src/engine/game.js';
 import { puzzleFor, dailyPuzzle } from '../src/engine/daily.js';
 import { generatePuzzle } from '../src/engine/generator.js';
+import { NIVEAUX, niveauDe } from '../src/engine/logic.js';
 
 // Grille 5×5 à solution unique. Marmottes en (0,3) (1,0) (2,2) (3,4) (4,1).
 const P = {
@@ -100,7 +101,7 @@ test('mode zen : une mauvaise marmotte est posée sans sifflet et surlignée en 
 });
 
 test('sauvegarde : aller-retour JSON, sauvegarde abîmée refusée, ancienne sauvegarde tolérée', () => {
-  const g = createGame(P, { mode: 'jour', cleJour: '2026-09-26' });
+  const g = createGame({ ...P, niveau: niveauDe(P) }, { mode: 'jour', cleJour: '2026-09-26' });
   tap(g, 2); tap(g, 12); tap(g, 12);
   g.ecoule = 4200;
   const relu = restoreGame(JSON.parse(JSON.stringify(saveableGame(g))));
@@ -110,6 +111,8 @@ test('sauvegarde : aller-retour JSON, sauvegarde abîmée refusée, ancienne sau
   assert.equal(restoreGame(null), null);
   assert.equal(restoreGame({ puzzle: P, cells: [0, 1] }), null, 'mauvaise longueur');
   assert.equal(restoreGame({ puzzle: P, cells: new Array(25).fill(7) }), null, 'valeur inconnue');
+  assert.equal(restoreGame({ puzzle: { ...P, regions: P.regions.map((r) => r + 5) }, cells: new Array(25).fill(EMPTY) }), null, 'alpage inconnu');
+  assert.equal(restoreGame({ puzzle: { size: 200, regions: [], solution: [] }, cells: [] }), null, 'taille hors bornes');
 
   const ancienne = { puzzle: P, mode: 'libre', cells: new Array(25).fill(EMPTY), sifflets: 2 };
   ancienne.cells[0] = CROSS;
@@ -117,9 +120,12 @@ test('sauvegarde : aller-retour JSON, sauvegarde abîmée refusée, ancienne sau
   assert.equal(r.manuel[0], true, 'croix d\'une ancienne sauvegarde considérée manuelle');
   assert.equal(r.cells[0], CROSS);
   assert.equal(r.sifflets, 2);
+  assert.ok(NIVEAUX.includes(r.puzzle.niveau), 'niveau recalculé pour une sauvegarde d\'avant les niveaux');
+  assert.equal(r.puzzle.niveau, niveauDe(P));
 });
 
 test('demande de puzzle : jour ou partie libre', () => {
   assert.deepEqual(puzzleFor({ type: 'jour', cle: '2026-09-26' }), dailyPuzzle('2026-09-26'));
   assert.deepEqual(puzzleFor({ type: 'libre', size: 6, seed: 9 }), generatePuzzle(6, 9));
+  assert.deepEqual(puzzleFor({ type: 'libre', size: 6, seed: 9, niveau: 'expert' }), generatePuzzle(6, 9, 'expert'));
 });

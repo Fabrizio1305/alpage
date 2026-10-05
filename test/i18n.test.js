@@ -6,7 +6,7 @@ import { LANGUES, NOMS_LANGUES, choisirLangue, definirLangue, t, _TEXTES } from 
 const racine = new URL('../', import.meta.url);
 const cles = Object.keys(_TEXTES.fr);
 // Arguments d'exemple pour les textes à paramètres (nombre = arité de la fonction).
-const EXEMPLES = { 1: [2], 2: [1, 3], 4: [1, 2, 3, 'vide'] };
+const EXEMPLES = { 1: [2], 2: [1, 3], 3: [8, 'expert', '03:12'], 4: [1, 2, 3, 'vide'] };
 
 test('les cinq langues ont exactement les mêmes clés que le français', () => {
   assert.deepEqual(Object.keys(_TEXTES).sort(), [...LANGUES].sort());

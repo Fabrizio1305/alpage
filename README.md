@@ -11,12 +11,18 @@ touchent, même en diagonale. Chaque puzzle n'a qu'une seule solution : tout se 
 - Touchez une case pour y mettre une croix (« pas ici »), touchez encore pour une marmotte,
   une troisième fois pour vider la case.
 - Une marmotte mal placée coûte un **sifflet d'alerte** ; au troisième, la partie est perdue.
-- **Puzzle du jour** identique pour tous (6×6 le lundi, jusqu'à 9×9 le week-end), ou partie
-  libre de 5×5 à 10×10.
+- **Quatre niveaux** : facile, moyen, difficile, expert. Le niveau dit quelle déduction il
+  faudra : dernière place possible (facile), un alpage enfermé dans une ligne (moyen),
+  plusieurs alpages enfermés dans autant de lignes (difficile), une hypothèse courte menant à
+  une impasse (expert). Aucun niveau n'oblige à deviner.
+- **Puzzle du jour** identique pour tous, de plus en plus dur dans la semaine : 6×6 moyen le
+  lundi, difficile du mardi au jeudi, expert du vendredi au dimanche (jusqu'à 9×9). Partie
+  libre de 5×5 à 10×10, au niveau choisi.
 - Réglages (bouton ⚙), tous désactivés par défaut : **croix automatiques** autour de chaque
   marmotte, **mode zen** sans sifflets où les conflits sont surlignés, **motifs** sur les
   alpages pour les personnes daltoniennes.
-- Série quotidienne, parties réussies et records par taille restent dans le téléphone.
+- Série quotidienne, parties réussies et records par taille et par niveau restent dans le
+  téléphone.
 - **Langues** : français, Deutsch, italiano, rumantsch et English, selon la langue du téléphone
   ou au choix dans les réglages.
 

@@ -28,16 +28,28 @@ Un puzzle n'a qu'une seule solution : tout se déduit, rien ne se devine.
   (toute version dérivée doit rester ouverte ; changeable tant que Fabrizio est seul auteur).
 - **Techniques** : PWA en HTML/CSS/JS vanilla, sans framework ni build ; moteur pur dans
   `src/engine/`, testé avec `node --test` (Node 22) ; puzzle du jour = générateur déterministe
-  à partir de la date locale, taille selon le jour (lun 6, mar-mer 7, jeu-ven 8, sam-dim 9,
-  réglable dans `src/engine/daily.js`).
+  à partir de la date locale, taille et niveau selon le jour (lun 6 moyen, mar 7 difficile,
+  mer 7 difficile, jeu 8 difficile, ven 8 expert, sam-dim 9 expert ; réglable dans
+  `src/engine/daily.js`).
 - **Service worker** : cache versionné (`CACHE = 'alpage-vN'` dans `sw.js`), servi depuis le
   cache uniquement ; une nouvelle version se télécharge en bloc puis bascule, jamais de mélange
   ancien HTML / nouveau script (constaté une fois avec l'ancienne stratégie). Contrepartie :
   incrémenter `CACHE` à chaque publication (règle dans `CLAUDE.md`, liste vérifiée par test).
 - **Générateur** : placement aléatoire valide → alpages qui poussent avec des appétits
   différents → réparation de l'unicité en déplaçant une case de chaque solution parasite vers
-  un alpage voisin (connexité préservée). Mesuré sur le PC : 10×10 en 20 ms en moyenne,
-  188 ms au pire sur 30 graines.
+  un alpage voisin (les cases qu'elle seule reliait la suivent : connexité préservée) →
+  retouches des frontières, une case à la fois, jusqu'au niveau demandé.
+- **Niveaux** (`src/engine/logic.js`) : un solveur « à la main » essaie toujours la déduction
+  la plus simple ; la plus dure dont il a eu besoin donne le niveau. Facile : dernière place
+  possible. Moyen : enfermement simple (un alpage dans une ligne ou une colonne, et
+  l'inverse) ou case qui barrerait toute une unité. Difficile : k alpages dans k lignes ou
+  colonnes. Expert : hypothèse courte (une marmotte ici → impasse par les déductions faciles
+  et moyennes). Un puzzle que ces déductions ne résolvent pas est rejeté. Si le niveau visé
+  reste hors d'atteinte après 40 essais, le puzzle le plus proche est rendu et l'interface
+  affiche son vrai niveau (jamais observé : 0 sur 300 graines en 5×5, 0 sur 150 de 6×6 à
+  10×10).
+- **Records** : un par taille et par niveau (clé `8-expert` dans `alpage.stats`). Les records
+  d'avant les niveaux (clé `8`) restent stockés mais ne s'affichent plus.
 
 ## Lots
 | # | Lot | Contenu | Statut |
@@ -81,14 +93,30 @@ les lots »).
 | A4 | Paysage | Deux colonnes sous 520 px de haut : cases de 42 px au lieu de 22 px en 915×412. L'app installée reste verrouillée en portrait (manifeste). | Fait |
 | A5 | Langues et vie privée (demande de Fabrizio) | Interface en français, allemand (usage suisse, sans « ß »), italien, romanche (rumantsch grischun) et anglais, dans `src/ui/i18n.js`. Langue du téléphone par défaut, anglais si inconnue, choix manuel dans les réglages. Bandeau « Sans pub · Sans pistage · Vos données restent sur ce téléphone » sous le jeu, qui ouvre l'encadré « Respectueux de votre vie privée » des réglages (avec lien vers le code source). 6 tests de cohérence des traductions. | Fait |
 
+## Niveaux de difficulté (demande de Fabrizio, 2026-10-05 : « je cale un peu »)
+Mesure avant le lot, 200 graines par taille : 65 % (10×10) à 94 % (5×5) des puzzles ne
+demandaient que des déductions faciles ou moyennes ; l'expert sortait 0 à 5 % du temps.
+
+| # | Lot | Contenu | Statut |
+|---|-----|---------|--------|
+| B1 | Niveaux | Solveur par déduction (`logic.js`), générateur qui vise un niveau, sélecteur « Niveau » en partie libre (mémorisé avec la taille), niveau affiché au-dessus du plateau, puzzle du jour gradué dans la semaine, records par taille et niveau, solveur exhaustif accéléré (×4 en 10×10). Textes dans les 5 langues. Cache v8. | Fait, à valider sur le Pixel |
+
+Temps de génération mesurés sur le PC (150 graines) : expert 9×9 91 ms en moyenne, 560 ms au
+pire ; expert 10×10 146 ms en moyenne, 720 ms au pire ; les autres niveaux restent sous
+250 ms au pire. Compter 2 à 3 fois plus sur le téléphone ; la génération tourne dans le
+Web Worker, l'écran affiche « Les marmottes cherchent leur alpage… ».
+
 ## Points ouverts
 - **Romanche** : traduit par Claude, non relu par une personne de langue romanche. À faire
   relire si le jeu est diffusé au-delà de Fabrizio (textes dans `src/ui/i18n.js`, clé `rm`).
 - Le manifeste (nom et description de l'app installée) reste en français.
 
 ## Prochaine action recommandée
-Aucune : version 7 validée sur le Pixel par Fabrizio (2026-09-26). Seul point ouvert
-facultatif : faire relire le romanche avant une diffusion plus large.
+Fabrizio : fusionner la PR du lot B1 (GitHub Pages publie alors la version 8), puis jouer
+quelques parties « Difficile » et « Expert » sur le Pixel et dire
+si le niveau expert est assez dur, et si la progression du puzzle du jour dans la semaine
+convient. Point ouvert facultatif : faire relire le romanche (nouveaux textes des niveaux
+compris) avant une diffusion plus large.
 
 ## État au 2026-09-26, fin de session
 - **Version en ligne** : v7 (`CACHE = 'alpage-v7'`), https://fabrizio1305.github.io/alpage/,
@@ -104,6 +132,14 @@ facultatif : faire relire le romanche avant une diffusion plus large.
 - **Suite possible, non planifiée** : relecture du romanche par une personne de langue
   romanche ; manifeste traduit (nom et description de l'app installée).
 
+## État au 2026-10-05
+- **Version** : v8 (`CACHE = 'alpage-v8'`) sur la branche `ccr-ecf87b06-n26sgu`, pas encore
+  fusionnée ni en ligne.
+- **Tests** : `npm test`, 50 verts (dont 9 pour les niveaux dans `test/logic.test.js`).
+- **Vérifié dans Chromium (412×870 et paysage 870×412)** : sélecteur de niveau, ligne
+  « Partie libre · 9 × 9 · Expert », choix conservés au rechargement, victoire → record
+  « 9×9 expert », interface en allemand, aucune requête externe, aucune erreur console.
+
 ## Journal
 - 2026-09-26 : cadrage, règles transcrites, plan par lots. Thème, GitHub Pages et GPL-3.0 validés.
   Lot 1 livré : moteur + 16 tests verts. Dépôt public `Fabrizio1305/alpage` créé et poussé.
@@ -115,3 +151,6 @@ facultatif : faire relire le romanche avant une diffusion plus large.
   Demande A5 : traduction (langues suisses + anglais) et mention vie privée dans l'interface.
   A5 livré (cache v7) : 5 langues, bandeau et encadré vie privée ; 40 tests verts.
   Version 7 validée sur le Pixel par Fabrizio.
+- 2026-10-05 : demande « niveaux plus difficiles ». Mesure : la difficulté des puzzles n'était
+  pas maîtrisée (surtout faciles et moyens). Lot B1 livré sur branche (cache v8) : 4 niveaux
+  notés par un solveur par déduction, puzzle du jour gradué ; 50 tests verts.

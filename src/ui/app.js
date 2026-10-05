@@ -2,12 +2,12 @@
 // Aucune donnée ne sort du téléphone : tout tourne dans cette page.
 
 import {
-  EMPTY, CROSS, MARMOT, MIN_SIZE, MAX_SIZE, dateKey, puzzleFor,
+  EMPTY, CROSS, MARMOT, MIN_SIZE, MAX_SIZE, NIVEAUX, dateKey, puzzleFor,
   SIFFLETS_MAX, createGame, restoreGame, saveableGame, tap, updateAutoCrosses, conflicts,
 } from '../engine/index.js';
 import {
   chargerPartie, sauvegarderPartie, chargerStats, enregistrerVictoire, serieCourante,
-  chargerReglages, sauvegarderReglages,
+  chargerReglages, sauvegarderReglages, cleRecord,
 } from './storage.js';
 import { t, choisirLangue, definirLangue, traduirePage, LANGUES, NOMS_LANGUES } from './i18n.js';
 
@@ -17,6 +17,7 @@ const sifflets = $('sifflets');
 const chrono = $('chrono');
 const voile = $('voile');
 const taille = $('taille');
+const choixNiveau = $('niveau');
 const stats = $('stats');
 const attente = $('attente');
 
@@ -114,6 +115,7 @@ function installer(p) {
   rendreSifflets();
   rendreChrono();
   rendreStats();
+  rendreInfo();
 }
 
 function nouvellePartie(puzzle, mode, cleJour = null) {
@@ -126,7 +128,7 @@ function partieDuJour() {
 }
 
 function partieLibre() {
-  lancer({ type: 'libre', size: Number(taille.value), seed: graineAleatoire() });
+  lancer({ type: 'libre', size: Number(taille.value), seed: graineAleatoire(), niveau: choixNiveau.value });
 }
 
 function rejouer() {
@@ -228,8 +230,9 @@ function gagner() {
   plateau.classList.add('fini');
   navigator.vibrate?.([30, 30, 30, 30, 80]);
   const temps = partie.ecoule;
-  const avant = chargerStats().meilleurs[partie.puzzle.size];
-  enregistrerVictoire({ size: partie.puzzle.size, temps, cleJour: partie.cleJour, zen: partie.zen });
+  const { size, niveau } = partie.puzzle;
+  const avant = chargerStats().meilleurs[cleRecord(size, niveau)];
+  enregistrerVictoire({ size, niveau, temps, cleJour: partie.cleJour, zen: partie.zen });
   rendreStats();
   sauvegarder();
   const record = !partie.zen && (!avant || temps < avant);
@@ -276,9 +279,21 @@ function rendreStats() {
   const s = chargerStats();
   const serie = serieCourante(s, dateKey());
   const parts = [t('serie', serie), t('reussis', s.reussis)];
-  const meilleur = partie && s.meilleurs[partie.puzzle.size];
-  if (meilleur) parts.push(t('recordTaille', partie.puzzle.size, formaterTemps(meilleur)));
+  if (partie) {
+    const { size, niveau } = partie.puzzle;
+    const meilleur = s.meilleurs[cleRecord(size, niveau)];
+    if (meilleur) parts.push(t('recordTaille', size, niveau ? t(niveau).toLowerCase() : '', formaterTemps(meilleur)));
+  }
   stats.textContent = parts.join(' · ');
+}
+
+/** Ligne au-dessus du plateau : type de partie, taille et niveau. */
+function rendreInfo() {
+  if (!partie) return;
+  const { size, niveau } = partie.puzzle;
+  const parts = [t(partie.mode === 'jour' ? 'puzzleDuJour' : 'partieLibre'), `${size} × ${size}`];
+  if (niveau) parts.push(t(niveau));
+  $('info').textContent = parts.join(' · ');
 }
 
 function tempsEcoule() {
@@ -332,6 +347,8 @@ function appliquerReglages() {
   $('reg-autoCroix').checked = reglages.autoCroix;
   $('reg-zen').checked = reglages.zen;
   $('reg-motifs').checked = reglages.motifs;
+  taille.value = reglages.taille;
+  choixNiveau.value = reglages.niveau;
 }
 
 function changerReglage(cle, valeur) {
@@ -359,16 +376,28 @@ function remplirChoixLangue() {
   choix.value = reglages.langue;
 }
 
+function remplirChoixNiveau() {
+  choixNiveau.replaceChildren(...NIVEAUX.map((n) => {
+    const o = document.createElement('option');
+    o.value = n;
+    o.textContent = t(n);
+    return o;
+  }));
+  choixNiveau.value = reglages.niveau;
+}
+
 /** Applique la langue choisie (ou celle du téléphone) à toute l'interface. */
 function appliquerLangue() {
   definirLangue(choisirLangue(reglages.langue, navigator.languages ?? [navigator.language]));
   traduirePage();
   remplirChoixLangue();
+  remplirChoixNiveau();
   montrerEtape(etape);
   if (partie) {
     ui.rendu.fill('');
     rendreTout();
     rendreSifflets();
+    rendreInfo();
   }
   rendreStats();
   ecrireVoile();
@@ -409,7 +438,6 @@ for (let n = MIN_SIZE; n <= MAX_SIZE; n++) {
   o.textContent = `${n} × ${n}`;
   taille.appendChild(o);
 }
-taille.value = 7;
 
 $('btn-jour').addEventListener('click', partieDuJour);
 $('btn-libre').addEventListener('click', partieLibre);
@@ -422,6 +450,8 @@ for (const cle of ['autoCroix', 'zen', 'motifs']) {
   $(`reg-${cle}`).addEventListener('change', (e) => changerReglage(cle, e.target.checked));
 }
 $('reg-langue').addEventListener('change', (e) => changerReglage('langue', e.target.value));
+taille.addEventListener('change', (e) => changerReglage('taille', Number(e.target.value)));
+choixNiveau.addEventListener('change', (e) => changerReglage('niveau', e.target.value));
 $('btn-prive').addEventListener('click', () => {
   $('reglages').hidden = false;
   $('apropos').scrollIntoView({ block: 'nearest' });

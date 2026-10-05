@@ -6,34 +6,42 @@
  */
 export function findSolutions(puzzle, limit = 2) {
   const { size, regions } = puzzle;
-  const usedCol = new Array(size).fill(false);
-  const usedReg = new Array(size).fill(false);
+  // colonnes[reg * size + row] : masque des colonnes de l'alpage `reg` dans la ligne `row`.
+  const colonnes = new Int32Array(size * size);
+  for (let i = 0; i < size * size; i++) colonnes[regions[i] * size + Math.floor(i / size)] |= 1 << (i % size);
   const placement = new Array(size).fill(-1);
   const found = [];
 
-  function step(row, prevCol) {
+  /** Chaque alpage encore libre a-t-il une case possible dans les lignes restantes ? */
+  function viable(row, usedCol, usedReg) {
+    for (let reg = 0; reg < size; reg++) {
+      if (usedReg & (1 << reg)) continue;
+      let r = row;
+      while (r < size && !(colonnes[reg * size + r] & ~usedCol)) r++;
+      if (r === size) return false;
+    }
+    return true;
+  }
+
+  function step(row, prevCol, usedCol, usedReg) {
     if (row === size) {
       found.push([...placement]);
       return found.length >= limit;
     }
+    if (!viable(row, usedCol, usedReg)) return false;
     const base = row * size;
     for (let col = 0; col < size; col++) {
-      if (usedCol[col]) continue;
+      if (usedCol & (1 << col)) continue;
       if (prevCol >= 0 && Math.abs(col - prevCol) <= 1) continue;
       const reg = regions[base + col];
-      if (usedReg[reg]) continue;
-      usedCol[col] = true;
-      usedReg[reg] = true;
+      if (usedReg & (1 << reg)) continue;
       placement[row] = col;
-      const stop = step(row + 1, col);
-      usedCol[col] = false;
-      usedReg[reg] = false;
-      if (stop) return true;
+      if (step(row + 1, col, usedCol | (1 << col), usedReg | (1 << reg))) return true;
     }
     return false;
   }
 
-  step(0, -1);
+  step(0, -1, 0, 0);
   return found;
 }
 
