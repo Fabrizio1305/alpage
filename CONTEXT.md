@@ -34,7 +34,13 @@ Un puzzle n'a qu'une seule solution : tout se déduit, rien ne se devine.
 - **Service worker** : cache versionné (`CACHE = 'alpage-vN'` dans `sw.js`), servi depuis le
   cache uniquement ; une nouvelle version se télécharge en bloc puis bascule, jamais de mélange
   ancien HTML / nouveau script (constaté une fois avec l'ancienne stratégie). Contrepartie :
-  incrémenter `CACHE` à chaque publication (règle dans `CLAUDE.md`, liste vérifiée par test).
+  incrémenter `CACHE` à chaque modification d'un fichier servi (règle rappelée en tête de
+  `sw.js` ; nouveau fichier ⇒ l'ajouter à `FICHIERS`, ce que `npm test` vérifie).
+- **Fichiers de Claude privés** (décision de Fabrizio, 2026-10-25 : « ne regarde pas le
+  public ») : `CLAUDE.md` et `.claude/` sont hors du dépôt public (`.gitignore`), gardés
+  seulement en local. Ils restent visibles dans l'historique Git d'avant cette date. Une
+  session cloud repart donc sans eux : les règles indispensables sont aussi ici et en tête
+  de `sw.js`.
 - **Générateur** : placement aléatoire valide → alpages qui poussent avec des appétits
   différents → réparation de l'unicité en déplaçant une case de chaque solution parasite vers
   un alpage voisin (case au milieu de son alpage : le voisin s'étend jusqu'à elle par le plus
@@ -143,8 +149,8 @@ compris) avant une diffusion plus large.
 - **Variables d'environnement** : aucune. Le jeu n'a ni secret, ni `.env.local`, ni service
   distant ; rien à régénérer sur une autre machine.
 - **Tests** : `npm test`, 40 verts (moteur, partie, stockage, service worker, traductions).
-- **Reprendre sur une autre machine** : `git clone`, `npm test`, puis aperçu local via
-  `.claude/launch.json` (serveur Python sur le port 8765). Aucune dépendance à installer.
+- **Reprendre sur une autre machine** : `git clone`, `npm test`, puis aperçu local avec
+  `python3 -m http.server 8765` à la racine. Aucune dépendance à installer.
 - **Astuce de test navigateur** : effacer le stockage depuis une page qui n'exécute pas le jeu
   (ex. `/README.md`). Depuis une page du jeu ouverte, la sauvegarde automatique à la fermeture
   réécrit la partie juste après l'effacement et fausse le test suivant.
@@ -184,3 +190,5 @@ compris) avant une diffusion plus large.
   notés par un solveur par déduction, puzzle du jour gradué ; 50 tests verts.
   Demande « grilles jusqu'à 15×15 » : lot B2 sur la même branche ; unicité prouvée par les
   déductions (15×15 expert : de 44 s à 0,23 s en moyenne) ; 56 tests verts.
+- 2026-10-25 : `CLAUDE.md` et `.claude/` retirés du dépôt public à la demande de Fabrizio
+  (gardés en local, ajoutés au `.gitignore`).
