@@ -2,3 +2,7 @@ node_modules/
 .env.local
 *.log
 .DS_Store
+
+# Instructions et réglages de Claude : privés, gardés hors du dépôt public
+CLAUDE.md
+.claude/
